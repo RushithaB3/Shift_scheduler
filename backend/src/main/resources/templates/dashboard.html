@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Shift Scheduler Dashboard</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+    <script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
+    <style>
+        body {
+            display: flex;
+            min-height: 100vh;
+            margin: 0;
+            font-family: 'Segoe UI', sans-serif;
+            background-color: #f8f9fa;
+        }
+        .sidebar {
+            width: 240px;
+            background: linear-gradient(180deg, #105396, #105ba6);
+            color: #ecf0f1;
+            padding: 30px 20px;
+            box-shadow: 2px 0 8px rgba(0, 0, 0, 0.15);
+            position: fixed;
+            top: 0;
+            left: 0;
+            height: 100vh;
+            z-index: 1000;
+        }
+        .sidebar h3 {
+            font-size: 22px;
+            font-weight: 600;
+            margin-bottom: 40px;
+            text-align: center;
+            color: #fbfbfa;
+            letter-spacing: 0.5px;
+        }
+        .sidebar a {
+            display: block;
+            padding: 12px 16px;
+            margin-bottom: 12px;
+            color: #ecf0f1;
+            text-decoration: none;
+            border-radius: 6px;
+            font-size: 15px;
+            transition: all 0.2s ease;
+        }
+        .sidebar a:hover {
+            background-color: #142871;
+            color: white;
+            transform: translateX(4px);
+        }
+        .sidebar a.active {
+            background-color: #142871;
+            font-weight: 600;
+            color: #ffffff;
+            box-shadow: 0 0 5px rgba(0,0,0,0.2);
+        }
+        .main-content {
+            flex-grow: 1;
+            margin-left: 240px;
+            padding: 30px;
+        }
+        #map {
+            width: 100%;
+            height: 450px;
+            border-radius: 8px;
+            border: 1px solid #ddd;
+        }
+        .card-summary {
+            text-align: center;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+            background: #ffffff;
+        }
+        .custom-tooltip {
+            background: rgba(33, 37, 41, 0.9);
+            color: #fff;
+            padding: 6px 10px;
+            border-radius: 4px;
+            font-size: 13px;
+            line-height: 1.4;
+        }
+
+    </style>
+</head>
+<body>
+
+<!-- Sidebar with only two links -->
+<div class="sidebar">
+    <h3>Zentech</h3>
+    <a href="/dashboard" class="active">Dashboard</a>
+    <a href="/schedule_manager">Schedule Manager</a>
+    <a href="/zones">Add Zone</a>
+</div>
+
+<!-- Main Dashboard -->
+<div class="main-content">
+    <h2 class="text-primary mb-4">Dashboard</h2>
+
+    <!-- Filters -->
+    <form id="filterForm" class="row g-3 mb-4">
+        <div class="col-md-3">
+            <label>Zone</label>
+            <select name="zoneId" id="filterZoneSelect" class="form-select">
+                <option value="">Select Zone</option>
+                <option th:each="z : ${zones}" th:value="${z.id}" th:text="${z.name}"></option>
+            </select>
+        </div>
+        <div class="col-md-3">
+            <label>Zip Code</label>
+            <select name="zipCodeId" id="filterZipSelect" class="form-select" disabled>
+                <option value="">Select Zip Code</option>
+            </select>
+        </div>
+        <div class="col-md-3">
+            <label>Start Date</label>
+            <input type="date" name="startDate" class="form-control" />
+        </div>
+        <div class="col-md-3">
+            <label>End Date</label>
+            <input type="date" name="endDate" class="form-control" />
+        </div>
+        <div class="col-md-12">
+            <button type="submit" class="btn btn-primary">Submit</button>
+        </div>
+    </form>
+
+    <!-- Map Display -->
+    <div class="bg-white p-4 rounded shadow-sm mb-4">
+        <h5 class="mb-3">User Map Overview</h5>
+        <div id="map">Loading map...</div>
+    </div>
+
+    <!-- Table will only show after filtering -->
+    <div id="dataTableWrapper" class="bg-white p-4 rounded shadow-sm" style="display: none;">
+        <h5 class="mb-3">User Records</h5>
+        <table class="table table-bordered table-hover">
+            <thead>
+                <tr>
+                    <th>User ID</th>
+                    <th>Name</th>
+                    <th>Email</th>
+                    <th>Zone</th>
+                    <th>Zip Code</th>
+                    <th>Start Date</th>
+                    <th>End Date</th>
+                </tr>
+            </thead>
+            <tbody id="shiftTableBody">
+                <!-- Filled dynamically -->
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- JS Libraries -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+<script th:inline="none">
+/*<![CDATA[*/
+let mapRef = null;
+let markersLayer = null;
+
+/*]]>*/
+
+document.addEventListener("DOMContentLoaded", function () {
+    // ✅ Initialize Leaflet map
+    mapRef = L.map('map', {
+        maxBounds: [
+            [25.8371, -106.6456],
+            [36.5007, -93.5083]
+        ],
+        minZoom: 5,
+        maxZoom: 20
+    }).setView([31.9686, -99.9018], 6);
+
+    // ✅ Set base tiles
+    L.tileLayer('https://api.maptiler.com/maps/streets/{z}/{x}/{y}.png?key=TNDg5IV57UY5BQLyJfmU', {
+        attribution: '&copy; <a href="https://www.maptiler.com/">MapTiler</a>',
+        maxZoom: 20
+    }).addTo(mapRef);
+
+    // ✅ Add Texas border from GeoJSON
+    fetch('/geo/texas.json')
+        .then(response => response.json())
+        .then(geoData => {
+            const texas = geoData.features.find(f => f.properties.NAME === "Texas");
+            if (texas) {
+                L.geoJSON({
+                    type: "FeatureCollection",
+                    features: [texas]
+                }, {
+                    style: {
+                        color: "#0077cc",
+                        weight: 2,
+                        fillOpacity: 0.1,
+                        fillColor: "#66b2ff"
+                    },
+                    onEachFeature: function (feature, layer) {
+                        layer.bindTooltip("State: " + feature.properties.NAME, { permanent: false });
+                    }
+                }).addTo(mapRef);
+            } else {
+                console.error("Texas not found in GeoJSON.");
+            }
+        })
+        .catch(error => {
+            console.error("Failed to load Texas GeoJSON:", error);
+        });
+
+    // ✅ Initialize markers layer
+    markersLayer = L.layerGroup().addTo(mapRef);
+
+    // ✅ Load initial users
+    fetch("/api/users")
+        .then(res => res.json())
+        .then(data => {
+            updateMap(data);
+            updateTable(data);
+        })
+        .catch(err => console.error("Error fetching initial shifts:", err));
+});
+
+// ✅ Zone filter: Populate zip dropdown
+document.getElementById("filterZoneSelect").addEventListener("change", function () {
+    const zoneId = this.value;
+    const zipDropdown = document.getElementById("filterZipSelect");
+    zipDropdown.innerHTML = "<option value=''>Select Zip Code</option>";
+    zipDropdown.disabled = true;
+
+    if (zoneId) {
+        fetch(`/api/zones/${zoneId}/zipcodes`)
+            .then(response => response.json())
+            .then(zipCodes => {
+                zipCodes.forEach(zip => {
+                    const option = document.createElement("option");
+                    option.value = zip.id;
+                    option.textContent = zip.code;
+                    zipDropdown.appendChild(option);
+                });
+                zipDropdown.disabled = false;
+            });
+    }
+});
+
+// ✅ Custom marker icon
+const customIcon = L.icon({
+    iconUrl: '/images/marker-icon.png',
+    shadowUrl: '/images/marker-shadow.png',
+    iconSize: [25, 41],
+    iconAnchor: [12, 41],
+    popupAnchor: [1, -34],
+    shadowSize: [41, 41]
+});
+
+// ✅ Handle filter form
+document.getElementById("filterForm").addEventListener("submit", function (e) {
+    e.preventDefault();
+    const zoneId = document.getElementById("filterZoneSelect").value;
+    const zipCodeId = document.getElementById("filterZipSelect").value;
+    const startDate = document.querySelector('input[name="startDate"]').value;
+    const endDate = document.querySelector('input[name="endDate"]').value;
+
+    const url = new URL("/api/users", window.location.origin);
+    if (zoneId) url.searchParams.append("zone", zoneId);
+    if (zipCodeId) url.searchParams.append("zip", zipCodeId);
+    if (startDate) url.searchParams.append("startDate", startDate);
+    if (endDate) url.searchParams.append("endDate", endDate);
+
+    fetch(url)
+        .then(response => response.json())
+        .then(data => {
+            updateMap(data);
+            updateTable(data);
+        });
+});
+
+// ✅ Plot users on map
+function updateMap(users) {
+    markersLayer.clearLayers();
+    const bounds = [];
+
+    users.forEach(user => {
+        if (user.latitude != null && user.longitude != null) {
+            const tooltipContent = `
+                <div>
+                    <strong>${user.firstName} ${user.lastName}</strong><br>
+                    ID: ${user.userId}<br>
+                    Email: ${user.email}<br>
+                    Zone: ${user.zone}<br>
+                    Zip: ${user.zip}
+                </div>
+            `;
+            const marker = L.marker([user.latitude, user.longitude], { icon: customIcon })
+                .bindTooltip(tooltipContent, {
+                    direction: 'top',
+                    sticky: true,
+                    opacity: 0.9,
+                    className: 'custom-tooltip'
+                });
+
+            markersLayer.addLayer(marker);
+            bounds.push([user.latitude, user.longitude]);
+        }
+    });
+
+    if (bounds.length === 1) {
+        mapRef.setView(bounds[0], 12);
+    } else if (bounds.length > 1) {
+        mapRef.fitBounds(bounds, { padding: [50, 50] });
+    }
+}
+
+// ✅ Update user table
+function updateTable(users) {
+    const table = document.getElementById("dataTableWrapper");
+    const body = document.getElementById("shiftTableBody");
+    body.innerHTML = "";
+
+    if (users.length === 0) {
+        table.style.display = "none";
+        return;
+    }
+
+    users
+        .filter(user => user.startDate && user.endDate)
+        .forEach(user => {
+            const tr = document.createElement("tr");
+            tr.innerHTML = `
+                <td>${user.userId}</td>
+                <td>${user.firstName} ${user.lastName}</td>
+                <td>${user.email}</td>
+                <td>${user.zone}</td>
+                <td>${user.zip}</td>
+                <td>${user.startDate}</td>
+                <td>${user.endDate}</td>
+            `;
+            body.appendChild(tr);
+        });
+
+    table.style.display = "block";
+}
+</script>
+
+
+</body>
+</html>

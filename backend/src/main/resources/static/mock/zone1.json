@@ -1,0 +1,18 @@
+{
+  "type": "Feature",
+  "properties": {
+    "name": "Zone 1"
+  },
+  "geometry": {
+    "type": "Polygon",
+    "coordinates": [
+      [
+        [-99.9, 31.6],
+        [-99.7, 31.6],
+        [-99.7, 31.8],
+        [-99.9, 31.8],
+        [-99.9, 31.6]
+      ]
+    ]
+  }
+}
