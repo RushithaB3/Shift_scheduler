@@ -16,9 +16,8 @@ public interface ShiftRepository extends JpaRepository<Shift, Long> {
     List<Shift> findByZone_NameAndZipCode_Code(String zoneName, String zipCode);
 
     List<Shift> findByZone_IdAndZipCode_IdAndStartDateLessThanEqualAndEndDateGreaterThanEqual(
-        Long zoneId,
-        Long zipCodeId,
-        LocalDate endDate,
-        LocalDate startDate
-    );
+            Long zoneId,
+            Long zipCodeId,
+            LocalDate endDate,
+            LocalDate startDate);
 }

@@ -27,8 +27,7 @@ public class LeaveController {
             LeaveRepository leaveRepository,
             UserRepository userRepository,
             ZoneRepository zoneRepository,
-            ZipCodeRepository zipCodeRepository
-    ) {
+            ZipCodeRepository zipCodeRepository) {
         this.leaveRepository = leaveRepository;
         this.userRepository = userRepository;
         this.zoneRepository = zoneRepository;
@@ -82,8 +81,7 @@ public class LeaveController {
             @RequestParam Long userId,
             @RequestParam Long zoneId,
             @RequestParam Long zipCodeId,
-            @ModelAttribute Leave leave
-    ) {
+            @ModelAttribute Leave leave) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("User not found"));
         Zone zone = zoneRepository.findById(zoneId)
