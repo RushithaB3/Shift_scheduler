@@ -2,6 +2,7 @@ package com.shiftscheduler.backend.model;
 
 import jakarta.persistence.*;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 @Entity
 public class Shift {
@@ -10,29 +11,27 @@ public class Shift {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    // Each shift is assigned to one user
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
-    // Zone where the shift is located
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "zone_id", nullable = false)
     private Zone zone;
 
-    // Zip code within the zone
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "zip_code_id", nullable = false)
     private ZipCode zipCode;
 
-    // Shift start date
     private LocalDate startDate;
 
-    // Shift end date
     private LocalDate endDate;
 
-    // Constructors
-    public Shift() {}
+    @Column(name = "last_modified")
+    private LocalDateTime lastModified;
+
+    public Shift() {
+    }
 
     public Shift(User user, Zone zone, ZipCode zipCode, LocalDate startDate, LocalDate endDate) {
         this.user = user;
@@ -42,7 +41,17 @@ public class Shift {
         this.endDate = endDate;
     }
 
-    // Getters and setters for each field
+    @PrePersist
+    protected void onCreate() {
+        this.lastModified = LocalDateTime.now();
+    }
+
+    @PreUpdate
+    protected void onUpdate() {
+        this.lastModified = LocalDateTime.now();
+    }
+
+    // Getters and setters
     public Long getId() {
         return id;
     }
@@ -89,5 +98,13 @@ public class Shift {
 
     public void setEndDate(LocalDate endDate) {
         this.endDate = endDate;
+    }
+
+    public LocalDateTime getLastModified() {
+        return lastModified;
+    }
+
+    public void setLastModified(LocalDateTime lastModified) {
+        this.lastModified = lastModified;
     }
 }

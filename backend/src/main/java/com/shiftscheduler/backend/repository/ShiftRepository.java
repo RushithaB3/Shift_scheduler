@@ -11,7 +11,7 @@ public interface ShiftRepository extends JpaRepository<Shift, Long> {
 
     List<Shift> findByUserId(Long userId);
 
-    List<Shift> findByUser(User user); // REQUIRED for filter by ID
+    List<Shift> findByUser(User user);
 
     List<Shift> findByZone_NameAndZipCode_Code(String zoneName, String zipCode);
 
@@ -20,4 +20,6 @@ public interface ShiftRepository extends JpaRepository<Shift, Long> {
             Long zipCodeId,
             LocalDate endDate,
             LocalDate startDate);
+
+    List<Shift> findAllByOrderByLastModifiedDesc();
 }
