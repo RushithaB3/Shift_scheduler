@@ -49,6 +49,7 @@
             margin-left: 240px;
             padding: 30px;
         }
+        
         .leave-row {
             background-color: #e3f2fd !important;
             color: #0d47a1 !important;
@@ -78,7 +79,16 @@
 
     <!-- Main Content -->
     <div class="main-content">
-        <form id="filterForm" class="row g-3 mb-4">
+        <div class="mt-2">
+            <h2 class="text-primary">Schedule Manager</h2>
+            <div class="mt-4">
+                <a href="/shifts" class="btn btn-primary me-2">ADD SHIFT</a>
+                <a href="/leaves" class="btn btn-primary me-2">ADD LEAVE</a>
+                <a href="/zones" class="btn btn-primary me-2">ADD ZONE</a>
+            </div>
+        </div>
+
+        <form id="filterForm" class="row g-3 mt-4">
             <div class="col-md-2">
                 <label>User ID</label>
                 <input type="number" class="form-control" id="filterUserId">
@@ -119,12 +129,6 @@
                 <button type="submit" class="btn btn-primary w-100">Submit</button>
             </div>
         </form>
-
-        <div class="mt-4 d-flex">
-            <a href="/shifts" class="btn btn-primary me-2">ADD SHIFT</a>
-            <a href="/leaves" class="btn btn-primary me-2">ADD LEAVE</a>
-            <a href="/zones" class="btn btn-primary me-2">ADD ZONE</a>
-        </div>
 
         <div id="dataTableWrapper" class="mt-4">
             <table class="table table-striped">
