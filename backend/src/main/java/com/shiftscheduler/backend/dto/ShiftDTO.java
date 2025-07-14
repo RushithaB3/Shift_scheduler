@@ -7,7 +7,7 @@ public class ShiftDTO {
     private Long id;
     private String startDate;
     private String endDate;
-    private Long userId;
+    private String racfid;
     private String firstName;
     private String lastName;
     private String email;
@@ -23,7 +23,7 @@ public class ShiftDTO {
 
         User user = shift.getUser();
         if (user != null) {
-            this.userId = user.getId();
+            this.racfid = user.getRacfid(); // ✅ Fix: call getRacfid(), not getId()
             this.firstName = user.getFirstName();
             this.lastName = user.getLastName();
             this.email = user.getEmail();
@@ -35,15 +35,47 @@ public class ShiftDTO {
     }
 
     // Getters
-    public Long getId() { return id; }
-    public String getStartDate() { return startDate; }
-    public String getEndDate() { return endDate; }
-    public Long getUserId() { return userId; }
-    public String getFirstName() { return firstName; }
-    public String getLastName() { return lastName; }
-    public String getEmail() { return email; }
-    public Double getLatitude() { return latitude; }
-    public Double getLongitude() { return longitude; }
-    public String getZoneName() { return zoneName; }
-    public String getZipCode() { return zipCode; }
+    public Long getId() {
+        return id;
+    }
+
+    public String getStartDate() {
+        return startDate;
+    }
+
+    public String getEndDate() {
+        return endDate;
+    }
+
+    public String getRacfid() {
+        return racfid;
+    }
+
+    public String getFirstName() {
+        return firstName;
+    }
+
+    public String getLastName() {
+        return lastName;
+    }
+
+    public String getEmail() {
+        return email;
+    }
+
+    public Double getLatitude() {
+        return latitude;
+    }
+
+    public Double getLongitude() {
+        return longitude;
+    }
+
+    public String getZoneName() {
+        return zoneName;
+    }
+
+    public String getZipCode() {
+        return zipCode;
+    }
 }

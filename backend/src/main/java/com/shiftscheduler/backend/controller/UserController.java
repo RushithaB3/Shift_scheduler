@@ -1,81 +1,96 @@
 package com.shiftscheduler.backend.controller;
 
 import com.shiftscheduler.backend.model.User;
+import com.shiftscheduler.backend.model.Zone;
+import com.shiftscheduler.backend.model.ZipCode;
 import com.shiftscheduler.backend.repository.UserRepository;
 import com.shiftscheduler.backend.repository.ZoneRepository;
 import com.shiftscheduler.backend.repository.ZipCodeRepository;
-
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
+import java.util.Optional;
 
 @Controller
 @RequestMapping("/users")
 public class UserController {
 
-    private final UserRepository userRepository;
-    private final ZoneRepository zoneRepository;
-    private final ZipCodeRepository zipCodeRepository;
+    private final UserRepository userRepo;
+    private final ZoneRepository zoneRepo;
+    private final ZipCodeRepository zipCodeRepo;
 
-    public UserController(UserRepository userRepository,
-                          ZoneRepository zoneRepository,
-                          ZipCodeRepository zipCodeRepository) {
-        this.userRepository = userRepository;
-        this.zoneRepository = zoneRepository;
-        this.zipCodeRepository = zipCodeRepository;
+    public UserController(UserRepository userRepo, ZoneRepository zoneRepo, ZipCodeRepository zipCodeRepo) {
+        this.userRepo = userRepo;
+        this.zoneRepo = zoneRepo;
+        this.zipCodeRepo = zipCodeRepo;
     }
 
-    // Show all users and the create/edit form
     @GetMapping
-    public String showUserList(Model model) {
-        model.addAttribute("users", userRepository.findAll());
-        model.addAttribute("user", new User()); // For the form
-        model.addAttribute("zones", zoneRepository.findAll());
-        model.addAttribute("zipCodes", zipCodeRepository.findAll());
+    public String showUsers(Model model) {
+        model.addAttribute("users", userRepo.findAll());
+        model.addAttribute("userForm", new User()); // For add form
+        model.addAttribute("zones", zoneRepo.findAll());
+        model.addAttribute("zipCodes", zipCodeRepo.findAll());
         return "users";
     }
 
-    // Save new user from the form
     @PostMapping
-    public String addUser(@ModelAttribute("user") User user) {
-        userRepository.save(user);
+    public String saveUser(@ModelAttribute("userForm") User userForm) {
+        // Set zone and zip if IDs provided
+        if (userForm.getZone() != null && userForm.getZone().getId() != null) {
+            Optional<Zone> zoneOpt = zoneRepo.findById(userForm.getZone().getId());
+            zoneOpt.ifPresent(userForm::setZone);
+        }
+        if (userForm.getZipCode() != null && userForm.getZipCode().getId() != null) {
+            Optional<ZipCode> zipOpt = zipCodeRepo.findById(userForm.getZipCode().getId());
+            zipOpt.ifPresent(userForm::setZipCode);
+        }
+        userRepo.save(userForm);
         return "redirect:/users";
     }
 
-    // Load the edit form with existing user data
     @GetMapping("/edit/{id}")
-    public String showEditForm(@PathVariable("id") Long id, Model model) {
-        User user = userRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Invalid user Id: " + id));
-        model.addAttribute("user", user);
-        model.addAttribute("users", userRepository.findAll());
-        model.addAttribute("zones", zoneRepository.findAll());
-        model.addAttribute("zipCodes", zipCodeRepository.findAll());
-        return "users"; // Reuse the same Thymeleaf page
+    public String editUser(@PathVariable Long id, Model model) {
+        Optional<User> userOpt = userRepo.findById(id);
+        if (userOpt.isPresent()) {
+            model.addAttribute("userForm", userOpt.get());
+        } else {
+            throw new RuntimeException("User not found");
+        }
+        model.addAttribute("users", userRepo.findAll());
+        model.addAttribute("zones", zoneRepo.findAll());
+        model.addAttribute("zipCodes", zipCodeRepo.findAll());
+        return "users";
     }
 
-    // Save updated user
     @PostMapping("/update/{id}")
-    public String updateUser(@PathVariable("id") Long id, @ModelAttribute("user") User user) {
-        User existingUser = userRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Invalid user Id: " + id));
-
-        existingUser.setFirstName(user.getFirstName());
-        existingUser.setLastName(user.getLastName());
-        existingUser.setEmail(user.getEmail());
-        existingUser.setLatitude(user.getLatitude());
-        existingUser.setLongitude(user.getLongitude());
-        existingUser.setZone(user.getZone());
-        existingUser.setZipCode(user.getZipCode());
-
-        userRepository.save(existingUser);
+    public String updateUser(@PathVariable Long id, @ModelAttribute("userForm") User updatedUser) {
+        Optional<User> userOpt = userRepo.findById(id);
+        if (userOpt.isPresent()) {
+            User user = userOpt.get();
+            user.setFirstName(updatedUser.getFirstName());
+            user.setLastName(updatedUser.getLastName());
+            user.setEmail(updatedUser.getEmail());
+            user.setTitle(updatedUser.getTitle()); // New
+            user.setPhoneNumber(updatedUser.getPhoneNumber()); // New
+            user.setLatitude(updatedUser.getLatitude());
+            user.setLongitude(updatedUser.getLongitude());
+            if (updatedUser.getZone() != null) {
+                user.setZone(updatedUser.getZone());
+            }
+            if (updatedUser.getZipCode() != null) {
+                user.setZipCode(updatedUser.getZipCode());
+            }
+            userRepo.save(user);
+        }
         return "redirect:/users";
     }
 
-    // Delete a user by ID
     @GetMapping("/delete/{id}")
-    public String deleteUser(@PathVariable("id") Long id) {
-        userRepository.deleteById(id);
+    public String deleteUser(@PathVariable Long id) {
+        userRepo.deleteById(id);
         return "redirect:/users";
     }
 }

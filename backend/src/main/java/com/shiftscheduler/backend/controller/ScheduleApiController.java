@@ -44,9 +44,9 @@ public class ScheduleApiController {
     // ========== SHIFTS ==========
 
     // View shifts by user ID
-    @GetMapping("/shifts/user/{userId}")
-    public List<ShiftDTO> getShiftsByUser(@PathVariable Long userId) {
-        return shiftRepo.findByUserId(userId).stream()
+    @GetMapping("/shifts/user/{racfid}")
+    public List<ShiftDTO> getShiftsByUser(@PathVariable String racfid) {
+        return shiftRepo.findByUserRacfid(racfid).stream()
                 .map(ShiftDTO::new)
                 .collect(Collectors.toList());
     }
@@ -64,9 +64,9 @@ public class ScheduleApiController {
     }
 
     // Delete shift for user
-    @DeleteMapping("/shifts/{userId}")
-    public ResponseEntity<String> deleteShift(@PathVariable Long userId) {
-        List<Shift> shifts = shiftRepo.findByUserId(userId);
+    @DeleteMapping("/shifts/{racfid}")
+    public ResponseEntity<String> deleteShift(@PathVariable String racfid) {
+        List<Shift> shifts = shiftRepo.findByUserRacfid(racfid);
         if (!shifts.isEmpty()) {
             shiftRepo.delete(shifts.get(0));
             return ResponseEntity.ok("Shift deleted");

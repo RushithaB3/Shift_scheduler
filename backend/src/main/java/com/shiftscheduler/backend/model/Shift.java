@@ -1,6 +1,7 @@
 package com.shiftscheduler.backend.model;
 
 import jakarta.persistence.*;
+import org.springframework.format.annotation.DateTimeFormat;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
@@ -10,6 +11,7 @@ public class Shift {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+    private String racfid;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
@@ -23,8 +25,10 @@ public class Shift {
     @JoinColumn(name = "zip_code_id", nullable = false)
     private ZipCode zipCode;
 
+    @DateTimeFormat(pattern = "yyyy-MM-dd")
     private LocalDate startDate;
 
+    @DateTimeFormat(pattern = "yyyy-MM-dd")
     private LocalDate endDate;
 
     @Column(name = "last_modified")
@@ -58,6 +62,14 @@ public class Shift {
 
     public void setId(Long id) {
         this.id = id;
+    }
+
+    public String getRacfid() {
+        return racfid;
+    }
+
+    public void setRacfid(String racfid) {
+        this.racfid = racfid;
     }
 
     public User getUser() {

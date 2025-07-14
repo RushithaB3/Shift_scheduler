@@ -100,4 +100,22 @@ public class UserApiController {
                         .distinct()
                         .collect(Collectors.toList()));
     }
+
+    // New: Get all RACFIDs for autocomplete
+    @GetMapping("/racfids")
+    public List<String> getAllRacfids() {
+        return userRepo.findAll().stream()
+                .map(User::getRacfid)
+                .filter(Objects::nonNull)
+                .sorted()
+                .collect(Collectors.toList());
+    }
+
+    // New: Get user by RACFID
+    @GetMapping("/racfid/{racfid}")
+    public ResponseEntity<UserDTO> getUserByRacfid(@PathVariable String racfid) {
+        return userRepo.findByRacfid(racfid)
+                .map(user -> ResponseEntity.ok(new UserDTO(user)))
+                .orElse(ResponseEntity.notFound().build());
+    }
 }

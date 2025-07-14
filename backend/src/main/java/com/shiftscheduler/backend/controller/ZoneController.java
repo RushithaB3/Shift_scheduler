@@ -35,7 +35,7 @@ public class ZoneController {
     // Save zone and assign selected zip codes to it
     @PostMapping("/save")
     public String saveZone(@ModelAttribute("zoneForm") Zone zone,
-                           @RequestParam(value = "zipCodeIds", required = false) List<Long> zipCodeIds) {
+            @RequestParam(value = "zipCodeIds", required = false) List<Long> zipCodeIds) {
         zoneRepository.save(zone);
 
         // Assign selected zip codes to this zone

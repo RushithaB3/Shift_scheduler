@@ -8,24 +8,22 @@ import java.util.List;
 
 public interface LeaveRepository extends JpaRepository<Leave, Long> {
 
-    // Find all leaves for a specific user
-    List<Leave> findByUserId(Long userId);
+        // Find all leaves for a specific user
+        List<Leave> findByUserRacfid(String racfid);
 
-    // Find leaves overlapping with a specific date range
-    List<Leave> findByUserIdAndFromDateLessThanEqualAndToDateGreaterThanEqual(
-        Long userId, LocalDate end, LocalDate start
-    );
+        // Find leaves overlapping with a specific date range
+        List<Leave> findByUserRacfidAndFromDateLessThanEqualAndToDateGreaterThanEqual(
+                        String racfid, LocalDate end, LocalDate start);
 
-    // Used for Dashboard Filtering
+        // Used for Dashboard Filtering
 
-    // Filter by zone only
-    List<Leave> findByZone_Id(Long zoneId);
+        // Filter by zone only
+        List<Leave> findByZone_Id(Long zoneId);
 
-    // Filter by zone and zip code
-    List<Leave> findByZone_IdAndZipCode_Id(Long zoneId, Long zipCodeId);
+        // Filter by zone and zip code
+        List<Leave> findByZone_IdAndZipCode_Id(Long zoneId, Long zipCodeId);
 
-    // Filter by zone, zip code, and date range
-    List<Leave> findByZone_IdAndZipCode_IdAndFromDateGreaterThanEqualAndToDateLessThanEqual(
-        Long zoneId, Long zipCodeId, LocalDate startDate, LocalDate endDate
-    );
+        // Filter by zone, zip code, and date range
+        List<Leave> findByZone_IdAndZipCode_IdAndFromDateGreaterThanEqualAndToDateLessThanEqual(
+                        Long zoneId, Long zipCodeId, LocalDate startDate, LocalDate endDate);
 }

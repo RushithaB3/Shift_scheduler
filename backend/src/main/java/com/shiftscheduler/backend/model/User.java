@@ -9,12 +9,20 @@ public class User {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column(length = 4, unique = true, nullable = false)
+    private String racfid;
+
     private String firstName;
     private String lastName;
     private String email;
 
-    private Double latitude;   // Added for map marker placement
-    private Double longitude;  // Added for map marker placement
+    private String title; // New column for title/role
+
+    @Column(length = 10)
+    private String phoneNumber; // New column for phone number
+
+    private Double latitude;
+    private Double longitude;
 
     @ManyToOne
     @JoinColumn(name = "zone_id")
@@ -32,6 +40,14 @@ public class User {
 
     public void setId(Long id) {
         this.id = id;
+    }
+
+    public String getRacfid() {
+        return racfid;
+    }
+
+    public void setRacfid(String racfid) {
+        this.racfid = racfid;
     }
 
     public String getFirstName() {
@@ -56,6 +72,22 @@ public class User {
 
     public void setEmail(String email) {
         this.email = email;
+    }
+
+    public String getTitle() {
+        return title;
+    }
+
+    public void setTitle(String title) {
+        this.title = title;
+    }
+
+    public String getPhoneNumber() {
+        return phoneNumber;
+    }
+
+    public void setPhoneNumber(String phoneNumber) {
+        this.phoneNumber = phoneNumber;
     }
 
     public Double getLatitude() {

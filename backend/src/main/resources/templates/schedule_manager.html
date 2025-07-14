@@ -132,71 +132,11 @@
                 <div class="mt-4 d-flex flex-wrap">
                     <a th:href="@{/shifts}" href="/shifts" class="btn btn-primary me-2 mb-2">ADD SHIFT</a>
                     <a th:href="@{/leaves}" href="/leaves" class="btn btn-primary me-2 mb-2">ADD LEAVE</a>
+                    <a th:href="@{/filter_shift}" href="/filter_shift" class="btn btn-primary me-2 mb-2">FILTER SHIFT</a>
                     <a th:href="@{/zones}" href="/zones" class="btn btn-primary me-2 mb-2">ADD ZONE</a>
                 </div>
             </div>
 
-            <form id="filterForm" class="row g-3 mt-4">
-                <div class="col-12 col-md-3">
-                    <label class="form-label">User ID</label>
-                    <input type="number" class="form-control" id="filterUserId">
-                </div>
-                <div class="col-12 col-md-3">
-                    <label class="form-label">First Name</label>
-                    <input type="text" class="form-control" id="filterFirstName" readonly>
-                </div>
-                <div class="col-12 col-md-3">
-                    <label class="form-label">Last Name</label>
-                    <input type="text" class="form-control" id="filterLastName" readonly>
-                </div>
-                <div class="col-12 col-md-3">
-                    <label class="form-label">Email</label>
-                    <input type="email" class="form-control" id="filterEmail" readonly>
-                </div>
-                <div class="col-12 col-md-3">
-                    <label class="form-label">Select Zone</label>
-                    <select class="form-select" id="filterZoneSelect">
-                        <option value="">Select Zone</option>
-                    </select>
-                </div>
-                <div class="col-12 col-md-3">
-                    <label class="form-label">Select Zip Code</label>
-                    <select class="form-select" id="filterZipSelect" disabled>
-                        <option value="">Select Zip Code</option>
-                    </select>
-                </div>
-                <div class="col-12 col-md-3">
-                    <label class="form-label">Start Date</label>
-                    <input type="date" class="form-control" id="filterStartDate">
-                </div>
-                <div class="col-12 col-md-3">
-                    <label class="form-label">End Date</label>
-                    <input type="date" class="form-control" id="filterEndDate">
-                </div>
-                <div class="col-12">
-                    <button type="submit" class="btn btn-primary">Submit</button>
-                </div>
-            </form>
-
-            <div id="dataTableWrapper" class="mt-4">
-                <div class="table-responsive">
-                    <table class="table table-striped">
-                        <thead>
-                            <tr>
-                                <th>Type</th>
-                                <th>User ID</th>
-                                <th>Zip Code</th>
-                                <th>Start Date</th>
-                                <th>End Date</th>
-                                <th>Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody id="shiftTableBody">
-                            <!-- Shift rows will be dynamically inserted here -->
-                        </tbody>
-                    </table>
-                </div>
-            </div>
         </div>
     </div>
 
@@ -238,20 +178,20 @@
         });
 
         // Auto-fill First Name, Last Name, and Email when User ID is entered
-        $('#filterUserId').on('input', function () {
-            const userId = $(this).val();
+        $('#filterracfid').on('input', function () {
+            const racfid = $(this).val();
             const firstNameInput = $('#filterFirstName');
             const lastNameInput = $('#filterLastName');
             const emailInput = $('#filterEmail');
 
-            if (!userId) {
+            if (!racfid) {
                 firstNameInput.val('');
                 lastNameInput.val('');
                 emailInput.val('');
                 return;
             }
 
-            fetch(`/api/users?id=${userId}`)
+            fetch(`/api/users?id=${racfid}`)
                 .then(res => {
                     if (!res.ok) {
                         throw new Error('User not found');
@@ -283,14 +223,14 @@
             e.preventDefault();
             const zoneId = $('#filterZoneSelect').val();
             const zipId = $('#filterZipSelect').val();
-            const userId = $('#filterUserId').val();
+            const racfid = $('#filterracfid').val();
             const startDate = $('#filterStartDate').val();
             const endDate = $('#filterEndDate').val();
 
             const url = new URL('/api/users', window.location.origin);
             if (zoneId) url.searchParams.append('zone', zoneId);
             if (zipId) url.searchParams.append('zip', zipId);
-            if (userId) url.searchParams.append('id', userId);
+            if (racfid) url.searchParams.append('id', racfid);
             if (startDate) url.searchParams.append('startDate', startDate);
             if (endDate) url.searchParams.append('endDate', endDate);
 
@@ -317,24 +257,24 @@
 
                         tr.innerHTML = `
                             <td>${isLeave ? 'Leave' : 'Shift'}</td>
-                            <td>${user.userId}</td>
+                            <td>${user.racfid}</td>
                             <td>${user.zip}</td>
                             <td>${user.startDate}</td>
                             <td>${user.endDate}</td>
                             <td>
-                                <button class="btn btn-primary action-btn" data-id="${user.userId}">Edit</button>
-                                <button class="btn btn-danger action-btn" data-id="${user.userId}">Delete</button>
+                                <button class="btn btn-primary action-btn" data-id="${user.racfid}">Edit</button>
+                                <button class="btn btn-danger action-btn" data-id="${user.racfid}">Delete</button>
                             </td>
                         `;
                         tbody.appendChild(tr);
 
                         // Add event listeners for Edit and Delete buttons
                         tr.querySelector('.btn-primary').addEventListener('click', function () {
-                            window.location.href = `/shifts?id=${user.userId}`;
+                            window.location.href = `/shifts?id=${user.racfid}`;
                         });
                         tr.querySelector('.btn-danger').addEventListener('click', function () {
                             if (confirm('Are you sure you want to delete this shift?')) {
-                                window.location.href = `/shifts/delete?id=${user.userId}`;
+                                window.location.href = `/shifts/delete?id=${user.racfid}`;
                             }
                         });
 

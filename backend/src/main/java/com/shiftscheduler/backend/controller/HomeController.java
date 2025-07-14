@@ -18,13 +18,12 @@ public class HomeController {
 
     @GetMapping("/edit_shift")
     public String editShiftLauncher() {
-        return "edit_shift";  // edit_shift.html
+        return "edit_shift"; // edit_shift.html
     }
 
     @GetMapping("/delete_shift")
     public String deleteShiftLauncher() {
-        return "delete_shift";  // delete_shift.html
+        return "delete_shift"; // delete_shift.html
     }
 
-    
 }

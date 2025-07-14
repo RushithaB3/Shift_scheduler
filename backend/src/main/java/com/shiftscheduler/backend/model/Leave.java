@@ -1,6 +1,7 @@
 package com.shiftscheduler.backend.model;
 
 import jakarta.persistence.*;
+import org.springframework.format.annotation.DateTimeFormat;
 
 import java.time.LocalDate;
 
@@ -17,21 +18,24 @@ public class Leave {
     private User user;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "zone_id", nullable = false)
+    @JoinColumn(name = "zone_id", nullable = true) // Changed to nullable
     private Zone zone;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "zip_code_id", nullable = false)
+    @JoinColumn(name = "zip_code_id", nullable = true) // Changed to nullable
     private ZipCode zipCode;
 
     @Column(name = "from_date", nullable = false)
+    @DateTimeFormat(pattern = "yyyy-MM-dd")
     private LocalDate fromDate;
 
     @Column(name = "to_date", nullable = false)
+    @DateTimeFormat(pattern = "yyyy-MM-dd")
     private LocalDate toDate;
 
     // Default constructor
-    public Leave() {}
+    public Leave() {
+    }
 
     // All-arguments constructor
     public Leave(User user, Zone zone, ZipCode zipCode, LocalDate fromDate, LocalDate toDate) {

@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="color-scheme" content="only light"> <!-- Retained in case helpful, but not primary fix -->
     <title>Shift Management</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"/>
     <script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
@@ -71,6 +72,32 @@
                 padding: 15px;
             }
         }
+       /* Updated CSS for custom suggestions dropdown */
+        #racfidSuggestions {
+            display: none; /* Hidden by default */
+            position: absolute; /* Position below input */
+            z-index: 1000; /* Above other elements */
+            background-color: white; /* Initial white background */
+            border: 1px solid #ccc;
+            border-radius: 0 0 4px 4px;
+            max-height: 200px;
+            overflow-y: auto;
+            width: 100%; /* Match input width */
+            margin-top: -1px; /* Seamless connection to input */
+            padding: 0;
+        }
+
+        .suggestion-item {
+            padding: 8px 12px;
+            color: black; /* Initial black text */
+            cursor: pointer;
+        }
+
+        .suggestion-item:hover,
+        .suggestion-item.active {
+            background-color: rgb(120, 170, 255); /* Hover blue background */
+            color: white; /* Hover white text */
+        }
     </style>
 </head>
 <body>
@@ -114,47 +141,49 @@
             </div>
 
             <!-- Add Shift Form -->
-            <form th:action="@{/shifts/save}" method="post" class="row g-3 border p-4 rounded shadow-sm">
-                <input type="hidden" name="id" th:value="${shiftForm.id}" />
-                <div class="col-12 col-md-3">
-                    <label class="form-label">User ID</label>
-                    <input type="number" name="user.id" id="userId" class="form-control" th:value="${shiftForm.user?.id}" required/>
+            <form th:action="@{/shifts/save}" th:object="${shiftForm}" method="post" class="row g-3 border p-4 rounded shadow-sm">
+                <input type="hidden" th:field="*{id}" />
+                <div class="col-12 col-md-3 position-relative"> <!-- Position-relative for absolute positioning -->
+                    <label class="form-label">RACF ID</label>
+                    <input type="text" th:field="*{racfid}" id="racfid" class="form-control" placeholder="Search RACF ID (e.g., u001)" required th:readonly="${shiftForm.id != null}" autocomplete="off" />
+                    <div id="racfidSuggestions">
+                        <!-- Items populated dynamically via JS -->
+                    </div>
                 </div>
                 <div class="col-12 col-md-3">
                     <label class="form-label">First Name</label>
-                    <input type="text" id="firstName" class="form-control" th:value="${shiftForm.user?.firstName}" disabled/>
+                    <input type="text" id="firstName" class="form-control" th:value="*{user?.firstName}" disabled/>
                 </div>
                 <div class="col-12 col-md-3">
                     <label class="form-label">Last Name</label>
-                    <input type="text" id="lastName" class="form-control" th:value="${shiftForm.user?.lastName}" disabled/>
+                    <input type="text" id="lastName" class="form-control" th:value="*{user?.lastName}" disabled/>
                 </div>
                 <div class="col-12 col-md-3">
                     <label class="form-label">Email</label>
-                    <input type="email" id="email" class="form-control" th:value="${shiftForm.user?.email}" disabled/>
+                    <input type="email" id="email" class="form-control" th:value="*{user?.email}" disabled/>
                 </div>
                 <div class="col-12 col-md-3">
                     <label class="form-label">Zone</label>
-                    <select name="zone.id" id="zoneSelect" class="form-select" required>
+                    <select th:field="*{zone.id}" id="zoneSelect" class="form-select" required>
+                        <option value="">Select Zone</option>
                         <option th:each="z : ${zones}" th:value="${z.id}" th:text="${z.name}"
-                                th:selected="${z.id == shiftForm.zone?.id}">Zone</option>
+                                th:selected="${z.id == shiftForm.zone?.id}"></option>
                     </select>
                 </div>
                 <div class="col-12 col-md-3">
                     <label class="form-label">Zip Code</label>
-                    <select name="zipCode.id" id="zipSelect" class="form-select" required>
-                        <option th:if="${shiftForm.zipCode != null}" 
-                                th:value="${shiftForm.zipCode.id}" 
-                                th:text="${shiftForm.zipCode.code}" 
-                                selected>Zip Code</option>
+                    <select th:field="*{zipCode.id}" id="zipSelect" class="form-select" required>
+                        <option value="">Select Zip Code</option>
                     </select>
+                    <input type="hidden" id="preZipId" th:value="*{zipCode?.id}" />
                 </div>
                 <div class="col-12 col-md-3">
                     <label class="form-label">Start Date</label>
-                    <input type="date" name="startDate" id="startDate" class="form-control" th:value="${shiftForm.startDate}" required/>
+                    <input type="date" th:field="*{startDate}" id="startDate" class="form-control" required/>
                 </div>
                 <div class="col-12 col-md-3">
                     <label class="form-label">End Date</label>
-                    <input type="date" name="endDate" id="endDate" class="form-control" th:value="${shiftForm.endDate}" required/>
+                    <input type="date" th:field="*{endDate}" id="endDate" class="form-control" required/>
                 </div>
                 <div class="col-12">
                     <button type="submit" class="btn btn-success">Submit Shift</button>
@@ -169,7 +198,7 @@
                 <table class="table table-bordered table-hover">
                     <thead>
                         <tr>
-                            <th>User ID</th>
+                            <th>RACF ID</th>
                             <th>Name</th>
                             <th>Email</th>
                             <th>Zone</th>
@@ -181,7 +210,7 @@
                     </thead>
                     <tbody>
                         <tr th:each="shift : ${shifts}">
-                            <td th:text="${shift.user.id}">1</td>
+                            <td th:text="${shift.racfid}">u001</td>
                             <td th:text="${shift.user.firstName + ' ' + shift.user.lastName}">Name</td>
                             <td th:text="${shift.user.email}">Email</td>
                             <td th:text="${shift.zone.name}">Zone</td>
@@ -189,8 +218,8 @@
                             <td th:text="${shift.startDate}">2025-07-01</td>
                             <td th:text="${shift.endDate}">2025-07-03</td>
                             <td>
-                                <a th:href="@{'/shifts/edit/' + ${shift.user.id}}" class="btn btn-sm btn-primary">Edit</a>
-                                <a th:href="@{'/shifts/delete/' + ${shift.user.id}}" class="btn btn-sm btn-danger"
+                                <a th:href="@{'/shifts/edit/' + ${shift.racfid}}" class="btn btn-sm btn-primary">Edit</a>
+                                <a th:href="@{'/shifts/delete/' + ${shift.racfid}}" class="btn btn-sm btn-danger"
                                    onclick="return confirm('Delete this shift?')">Delete</a>
                             </td>
                         </tr>
@@ -207,43 +236,145 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script>
     $(document).ready(function () {
-        // Fetch user details when user ID changes
-        $('#userId').on('input', function () {
-            let userId = $(this).val();
-            if (userId) {
-                $.get(`/api/users/${userId}`, function (data) {
+        // New: Fetch all RACFIDs on page load for suggestions
+        let allRacfids = [];
+        $.get('/api/users/racfids', function (data) {
+            allRacfids = data;
+            populateSuggestions(allRacfids); // Initial full list
+        }).fail(function () {
+            console.error('Error fetching RACFIDs');
+        });
+
+        // Function to populate/filter suggestions
+        function populateSuggestions(racfids) {
+            const dropdown = $('#racfidSuggestions');
+            dropdown.empty();
+            $.each(racfids, function (index, racfid) {
+                dropdown.append('<div class="suggestion-item" data-value="' + racfid + '">' + racfid + '</div>');
+            });
+        }
+
+        // Dynamic filtering on input
+        $('#racfid').on('input', function () {
+            const query = $(this).val().toLowerCase();
+            const filtered = allRacfids.filter(racfid => racfid.toLowerCase().includes(query));
+            populateSuggestions(filtered);
+            if (filtered.length > 0) {
+                $('#racfidSuggestions').show();
+            } else {
+                $('#racfidSuggestions').hide();
+            }
+            fetchUserDetails(); // Also fetch details on input
+        });
+
+        // Show on focus
+        $('#racfid').on('focus', function () {
+            if ($('#racfidSuggestions .suggestion-item').length > 0) {
+                $('#racfidSuggestions').show();
+            }
+        });
+
+        // Hide on blur (with delay for clicks)
+        $('#racfid').on('blur', function () {
+            setTimeout(() => $('#racfidSuggestions').hide(), 100);
+        });
+
+        // Handle item clicks
+        $('#racfidSuggestions').on('click', '.suggestion-item', function () {
+            $('#racfid').val($(this).data('value'));
+            $('#racfidSuggestions').hide();
+            fetchUserDetails();
+        });
+
+        // Basic keyboard navigation (optional but improves UX)
+        let currentFocus = -1;
+        $('#racfid').on('keydown', function (e) {
+            const items = $('#racfidSuggestions .suggestion-item');
+            if (e.keyCode === 40) { // Down
+                currentFocus++;
+                addActive(items);
+            } else if (e.keyCode === 38) { // Up
+                currentFocus--;
+                addActive(items);
+            } else if (e.keyCode === 13) { // Enter
+                e.preventDefault();
+                if (currentFocus > -1) {
+                    items.eq(currentFocus).click();
+                }
+            } else if (e.keyCode === 27) { // Esc
+                $('#racfidSuggestions').hide();
+            }
+        });
+
+        function addActive(items) {
+            if (!items.length) return;
+            removeActive(items);
+            if (currentFocus >= items.length) currentFocus = 0;
+            if (currentFocus < 0) currentFocus = (items.length - 1);
+            items.eq(currentFocus).addClass('active');
+            items.eq(currentFocus)[0].scrollIntoView({ block: 'nearest' });
+        }
+
+        function removeActive(items) {
+            items.removeClass('active');
+        }
+
+        // Fetch user details when RACFID changes or blurred
+        $('#racfid').on('change blur', function () {
+            let racfid = $('#racfid').val().trim();
+            if (racfid) {
+                $.get(`/api/users/racfid/${racfid}`, function (data) {
                     $('#firstName').val(data.firstName || '');
                     $('#lastName').val(data.lastName || '');
                     $('#email').val(data.email || '');
                 }).fail(function () {
-                    // Clear fields if user ID is invalid
+                    // Clear fields if RACFID is invalid
                     $('#firstName').val('');
                     $('#lastName').val('');
                     $('#email').val('');
                 });
             } else {
-                // Clear fields if user ID is empty
+                // Clear fields if RACFID is empty
                 $('#firstName').val('');
                 $('#lastName').val('');
                 $('#email').val('');
             }
         });
 
-        // Zone selection logic
-        $('#zoneSelect').change(function () {
-            let zoneId = $(this).val();
-            $('#zipSelect').empty().append('<option value="">Select Zip Code</option>').prop('disabled', !zoneId);
+        // Reusable function to load zip codes for a zone
+        function loadZipCodes(zoneId) {
             if (zoneId) {
                 $.get(`/shifts/zone/${zoneId}/zipcodes`, function (data) {
+                    $('#zipSelect').empty().append('<option value="">Select Zip Code</option>');
                     $.each(data, function (index, zip) {
                         $('#zipSelect').append(new Option(zip.code, zip.id));
                     });
+                    // Set pre-selected zip if in edit mode
+                    let preZipId = $('#preZipId').val();
+                    if (preZipId) {
+                        $('#zipSelect').val(preZipId);
+                    }
                     $('#zipSelect').prop('disabled', false);
                 }).fail(function () {
                     $('#zipSelect').prop('disabled', true);
                 });
+            } else {
+                $('#zipSelect').empty().append('<option value="">Select Zip Code</option>').prop('disabled', true);
             }
+        }
+
+        // Zone selection change event
+        $('#zoneSelect').change(function () {
+            let zoneId = $(this).val();
+            loadZipCodes(zoneId);
         });
+
+        // On page load: If in edit mode (zone pre-selected), load zips
+        let initialZoneId = $('#zoneSelect').val();
+        loadZipCodes(initialZoneId);
+
+        // On page load: If racfid pre-filled (edit), fetch user details
+        fetchUserDetails();
     });
     </script>
 </body>

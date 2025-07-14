@@ -9,7 +9,7 @@ import java.util.List;
 
 public interface ShiftRepository extends JpaRepository<Shift, Long> {
 
-    List<Shift> findByUserId(Long userId);
+    List<Shift> findByUserRacfid(String racfid);
 
     List<Shift> findByUser(User user);
 

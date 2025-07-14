@@ -18,7 +18,8 @@ public class ZipCode {
     private Zone zone;
 
     // Default constructor
-    public ZipCode() {}
+    public ZipCode() {
+    }
 
     // Constructor with parameters
     public ZipCode(String code, Zone zone) {

@@ -1,5 +1,6 @@
 package com.shiftscheduler.backend.controller;
 
+import com.shiftscheduler.backend.dto.LeaveDTO; // New DTO
 import com.shiftscheduler.backend.model.Leave;
 import com.shiftscheduler.backend.model.User;
 import com.shiftscheduler.backend.model.Zone;
@@ -11,89 +12,88 @@ import com.shiftscheduler.backend.repository.ZipCodeRepository;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
+import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Controller
 @RequestMapping("/leaves")
 public class LeaveController {
 
-    private final LeaveRepository leaveRepository;
-    private final UserRepository userRepository;
-    private final ZoneRepository zoneRepository;
-    private final ZipCodeRepository zipCodeRepository;
+    private final LeaveRepository leaveRepo;
+    private final UserRepository userRepo;
+    private final ZoneRepository zoneRepo;
+    private final ZipCodeRepository zipCodeRepo;
 
-    public LeaveController(
-            LeaveRepository leaveRepository,
-            UserRepository userRepository,
-            ZoneRepository zoneRepository,
-            ZipCodeRepository zipCodeRepository) {
-        this.leaveRepository = leaveRepository;
-        this.userRepository = userRepository;
-        this.zoneRepository = zoneRepository;
-        this.zipCodeRepository = zipCodeRepository;
+    public LeaveController(LeaveRepository leaveRepo, UserRepository userRepo,
+            ZoneRepository zoneRepo, ZipCodeRepository zipCodeRepo) {
+        this.leaveRepo = leaveRepo;
+        this.userRepo = userRepo;
+        this.zoneRepo = zoneRepo;
+        this.zipCodeRepo = zipCodeRepo;
     }
 
-    // Show the leave form + all submitted leaves
+    // Show add leave form and list
     @GetMapping
-    public String showLeaveForm(Model model) {
-        model.addAttribute("leave", new Leave());
-        model.addAttribute("leaves", leaveRepository.findAll());
-        model.addAttribute("zones", zoneRepository.findAll());
-        model.addAttribute("zipCodes", zipCodeRepository.findAll());
-        return "leaves"; // templates/leaves.html
-    }
-
-    // Autofill user details by ID
-    @GetMapping("/fetch-user")
-    public String fetchUserDetails(@RequestParam Long userId, Model model) {
-        Optional<User> userOpt = userRepository.findById(userId);
-        Leave leave = new Leave();
-
-        if (userOpt.isPresent()) {
-            User user = userOpt.get();
-            leave.setUser(user);
-
-            // ✅ Set zone and zipCode from User entity if they exist
-            if (user.getZone() != null) {
-                leave.setZone(user.getZone());
-            }
-            if (user.getZipCode() != null) {
-                leave.setZipCode(user.getZipCode());
-            }
-
-            model.addAttribute("userFound", true);
-        } else {
-            model.addAttribute("userFound", false);
-        }
-
-        model.addAttribute("leave", leave);
-        model.addAttribute("leaves", leaveRepository.findAll());
-        model.addAttribute("zones", zoneRepository.findAll());
-        model.addAttribute("zipCodes", zipCodeRepository.findAll());
-
+    public String showLeaves(Model model) {
+        List<Leave> leaves = leaveRepo.findAll();
+        List<LeaveDTO> leaveDTOs = leaves.stream()
+                .map(LeaveDTO::new)
+                .collect(Collectors.toList());
+        model.addAttribute("leaves", leaveDTOs);
+        model.addAttribute("leaveForm", new Leave()); // For add form
+        model.addAttribute("zones", zoneRepo.findAll());
+        model.addAttribute("zipCodes", zipCodeRepo.findAll());
         return "leaves";
     }
 
-    // Save leave submission
+    // Fetch user details by RACFID for auto-fill (but now handled via JS/AJAX)
+    @GetMapping("/fetch-user")
+    public String fetchUser(@RequestParam String racfid, Model model) {
+        Optional<User> userOpt = userRepo.findByRacfid(racfid);
+        if (userOpt.isPresent()) {
+            User user = userOpt.get();
+            model.addAttribute("user", user);
+            model.addAttribute("zone", user.getZone());
+            model.addAttribute("zipCode", user.getZipCode());
+        } else {
+            model.addAttribute("error", "User not found.");
+        }
+        model.addAttribute("leaves", leaveRepo.findAll().stream().map(LeaveDTO::new).collect(Collectors.toList()));
+        model.addAttribute("zones", zoneRepo.findAll());
+        model.addAttribute("zipCodes", zipCodeRepo.findAll());
+        return "leaves";
+    }
+
+    // Add leave
     @PostMapping
     public String addLeave(
-            @RequestParam Long userId,
-            @RequestParam Long zoneId,
-            @RequestParam Long zipCodeId,
-            @ModelAttribute Leave leave) {
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("User not found"));
-        Zone zone = zoneRepository.findById(zoneId)
-                .orElseThrow(() -> new RuntimeException("Zone not found"));
-        ZipCode zipCode = zipCodeRepository.findById(zipCodeId)
-                .orElseThrow(() -> new RuntimeException("Zip code not found"));
+            @RequestParam String racfid,
+            @ModelAttribute Leave leaveForm,
+            RedirectAttributes redirectAttributes) {
+        Optional<User> userOpt = userRepo.findByRacfid(racfid);
+        if (userOpt.isEmpty()) {
+            redirectAttributes.addFlashAttribute("error", "Invalid User RACFID.");
+            return "redirect:/leaves";
+        }
 
-        leave.setUser(user);
-        leave.setZone(zone);
-        leave.setZipCode(zipCode);
+        Leave leave = new Leave();
+        leave.setUser(userOpt.get());
+        // Zone and ZipCode are optional, set to null or user's defaults if needed
+        leave.setZone(null);
+        leave.setZipCode(null);
+        leave.setFromDate(leaveForm.getFromDate());
+        leave.setToDate(leaveForm.getToDate());
 
-        leaveRepository.save(leave);
+        if (leave.getFromDate().isAfter(leave.getToDate())) {
+            redirectAttributes.addFlashAttribute("error", "From Date must be before or equal to To Date.");
+            return "redirect:/leaves";
+        }
+
+        leaveRepo.save(leave);
+        redirectAttributes.addFlashAttribute("success", "Leave added successfully.");
         return "redirect:/leaves";
     }
 }

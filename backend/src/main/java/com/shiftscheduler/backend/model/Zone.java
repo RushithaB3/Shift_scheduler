@@ -16,12 +16,13 @@ public class Zone {
     @Column(nullable = false, unique = true)
     private String name;
 
-    @JsonIgnore  // ❗ Prevents circular reference during JSON serialization
+    @JsonIgnore // ❗ Prevents circular reference during JSON serialization
     @OneToMany(mappedBy = "zone", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<ZipCode> zipCodes;
 
     // Constructors
-    public Zone() {}
+    public Zone() {
+    }
 
     public Zone(String name) {
         this.name = name;

@@ -7,120 +7,128 @@ import com.shiftscheduler.backend.model.ZipCode;
 import com.shiftscheduler.backend.model.Zone;
 import com.shiftscheduler.backend.repository.ShiftRepository;
 import com.shiftscheduler.backend.repository.UserRepository;
-import com.shiftscheduler.backend.repository.ZoneRepository;
 import com.shiftscheduler.backend.repository.ZipCodeRepository;
-
+import com.shiftscheduler.backend.repository.ZoneRepository;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Controller
 @RequestMapping("/shifts")
 public class ShiftController {
 
-    private final ShiftRepository shiftRepository;
-    private final UserRepository userRepository;
-    private final ZoneRepository zoneRepository;
-    private final ZipCodeRepository zipCodeRepository;
+    private final ShiftRepository shiftRepo;
+    private final UserRepository userRepo;
+    private final ZoneRepository zoneRepo;
+    private final ZipCodeRepository zipCodeRepo;
 
-    public ShiftController(
-            ShiftRepository shiftRepository,
-            UserRepository userRepository,
-            ZoneRepository zoneRepository,
-            ZipCodeRepository zipCodeRepository) {
-        this.shiftRepository = shiftRepository;
-        this.userRepository = userRepository;
-        this.zoneRepository = zoneRepository;
-        this.zipCodeRepository = zipCodeRepository;
+    public ShiftController(ShiftRepository shiftRepo, UserRepository userRepo,
+            ZoneRepository zoneRepo, ZipCodeRepository zipCodeRepo) {
+        this.shiftRepo = shiftRepo;
+        this.userRepo = userRepo;
+        this.zoneRepo = zoneRepo;
+        this.zipCodeRepo = zipCodeRepo;
     }
 
-    // Display all shifts + form
+    // Show shifts list and form
     @GetMapping
     public String showShifts(Model model) {
-        model.addAttribute("shifts", shiftRepository.findAllByOrderByLastModifiedDesc());
-        model.addAttribute("zones", zoneRepository.findAll());
-        model.addAttribute("shiftForm", new Shift());
+        model.addAttribute("shifts", shiftRepo.findAllByOrderByLastModifiedDesc());
+        model.addAttribute("shiftForm", new Shift()); // For add form
+        model.addAttribute("zones", zoneRepo.findAll());
         return "shifts";
     }
 
-    // Edit shift by userId
-    @GetMapping("/edit/{userId}")
-    public String editShift(@PathVariable Long userId, Model model) {
-        List<Shift> shifts = shiftRepository.findByUserId(userId);
-        model.addAttribute("shiftForm", !shifts.isEmpty() ? shifts.get(0) : new Shift());
-        model.addAttribute("zones", zoneRepository.findAll());
-        model.addAttribute("shifts", shiftRepository.findAllByOrderByLastModifiedDesc());
+    // Edit shift by user RACFID
+    @GetMapping("/edit/{racfid}")
+    public String editShift(@PathVariable String racfid, Model model) {
+        List<Shift> shifts = shiftRepo.findByUserRacfid(racfid);
+        if (!shifts.isEmpty()) {
+            model.addAttribute("shiftForm", shifts.get(0)); // Use first if multiple
+        }
+        model.addAttribute("shifts", shiftRepo.findAllByOrderByLastModifiedDesc());
+        model.addAttribute("zones", zoneRepo.findAll());
         return "shifts";
     }
 
-    // Add or update shift
+    // Save or update shift
     @PostMapping("/save")
-    public String saveOrUpdateShift(@ModelAttribute Shift shift) {
-        // Validate and set User
-        Optional<User> userOpt = userRepository.findById(shift.getUser().getId());
-        if (!userOpt.isPresent()) {
-            return "redirect:/shifts?error=UserNotFound";
+    public String saveShift(@ModelAttribute("shiftForm") Shift shiftForm, RedirectAttributes redirectAttributes) {
+        // Find user by RACFID (from form)
+        Optional<User> userOpt = userRepo.findByRacfid(shiftForm.getRacfid());
+        if (userOpt.isEmpty()) {
+            redirectAttributes.addFlashAttribute("error", "Invalid RACFID. User not found.");
+            return "redirect:/shifts";
         }
-        shift.setUser(userOpt.get());
 
-        // Validate and set Zone
-        Optional<Zone> zoneOpt = zoneRepository.findById(shift.getZone().getId());
-        if (!zoneOpt.isPresent()) {
-            return "redirect:/shifts?error=ZoneNotFound";
+        // Find zone and zip code by IDs (from form)
+        Optional<Zone> zoneOpt = zoneRepo.findById(shiftForm.getZone().getId());
+        Optional<ZipCode> zipOpt = zipCodeRepo.findById(shiftForm.getZipCode().getId());
+        if (zoneOpt.isEmpty() || zipOpt.isEmpty()) {
+            redirectAttributes.addFlashAttribute("error", "Invalid Zone or Zip Code.");
+            return "redirect:/shifts";
         }
-        shift.setZone(zoneOpt.get());
 
-        // Validate and set ZipCode
-        Optional<ZipCode> zipCodeOpt = zipCodeRepository.findById(shift.getZipCode().getId());
-        if (!zipCodeOpt.isPresent()) {
-            return "redirect:/shifts?error=ZipCodeNotFound";
-        }
-        shift.setZipCode(zipCodeOpt.get());
-
-        // Update existing shift if id exists, otherwise create new
-        if (shift.getId() != null) {
-            Optional<Shift> existingShiftOpt = shiftRepository.findById(shift.getId());
-            if (existingShiftOpt.isPresent()) {
-                Shift existingShift = existingShiftOpt.get();
-                existingShift.setUser(shift.getUser());
-                existingShift.setZone(shift.getZone());
-                existingShift.setZipCode(shift.getZipCode());
-                existingShift.setStartDate(shift.getStartDate());
-                existingShift.setEndDate(shift.getEndDate());
-                shiftRepository.save(existingShift);
-            } else {
-                // If ID is provided but shift not found, treat as new shift
-                shift.setId(null);
-                shiftRepository.save(shift);
+        // Create or update shift
+        Shift shift;
+        if (shiftForm.getId() != null) {
+            // Update existing
+            Optional<Shift> existingOpt = shiftRepo.findById(shiftForm.getId());
+            if (existingOpt.isEmpty()) {
+                redirectAttributes.addFlashAttribute("error", "Shift not found for update.");
+                return "redirect:/shifts";
             }
+            shift = existingOpt.get();
         } else {
             // New shift
-            shiftRepository.save(shift);
+            shift = new Shift();
         }
 
+        // Set fields
+        shift.setUser(userOpt.get());
+        shift.setRacfid(shiftForm.getRacfid()); // Denormalize for queries
+        shift.setZone(zoneOpt.get());
+        shift.setZipCode(zipOpt.get());
+        shift.setStartDate(shiftForm.getStartDate());
+        shift.setEndDate(shiftForm.getEndDate());
+
+        // Validate dates (optional: start <= end)
+        if (shift.getStartDate().isAfter(shift.getEndDate())) {
+            redirectAttributes.addFlashAttribute("error", "Start Date must be before or equal to End Date.");
+            return "redirect:/shifts";
+        }
+
+        shiftRepo.save(shift);
+        redirectAttributes.addFlashAttribute("success", "Shift saved successfully.");
         return "redirect:/shifts";
     }
 
-    // Delete shift by userId
-    @GetMapping("/delete/{userId}")
-    public String deleteShift(@PathVariable Long userId) {
-        List<Shift> shifts = shiftRepository.findByUserId(userId);
+    // Delete shift by user RACFID
+    @GetMapping("/delete/{racfid}")
+    public String deleteShift(@PathVariable String racfid, RedirectAttributes redirectAttributes) {
+        List<Shift> shifts = shiftRepo.findByUserRacfid(racfid);
         if (!shifts.isEmpty()) {
-            shiftRepository.delete(shifts.get(0));
+            shiftRepo.delete(shifts.get(0)); // Delete first if multiple
+            redirectAttributes.addFlashAttribute("success", "Shift deleted.");
+        } else {
+            redirectAttributes.addFlashAttribute("error", "No shift found to delete.");
         }
         return "redirect:/shifts";
     }
 
-    // Return simplified zip code list to avoid JSON circular references
-    @ResponseBody
+    // Get zip codes by zone ID (for AJAX)
     @GetMapping("/zone/{zoneId}/zipcodes")
-    public List<ZipCodeDTO> getZipCodesByZone(@PathVariable Long zoneId) {
-        List<ZipCode> zipCodes = zipCodeRepository.findByZoneId(zoneId);
-        return zipCodes.stream()
+    public ResponseEntity<List<ZipCodeDTO>> getZipCodesByZone(@PathVariable Long zoneId) {
+        List<ZipCode> zipCodes = zipCodeRepo.findByZoneId(zoneId);
+        List<ZipCodeDTO> dtoList = zipCodes.stream()
                 .map(zip -> new ZipCodeDTO(zip.getId(), zip.getCode()))
-                .toList(); // Replaced .collect(Collectors.toList()) with .toList()
+                .collect(Collectors.toList());
+        return ResponseEntity.ok(dtoList);
     }
 }

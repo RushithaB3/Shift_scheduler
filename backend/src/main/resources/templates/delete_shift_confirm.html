@@ -21,7 +21,7 @@
             </ul>
 
             <form th:action="@{/shifts/delete/confirm}" method="post">
-                <input type="hidden" name="userId" th:value="${shiftToDelete.user.id}" />
+                <input type="hidden" name="racfid" th:value="${shiftToDelete.user.id}" />
                 <button type="submit" class="btn btn-danger">Confirm Delete</button>
                 <a href="/shifts" class="btn btn-secondary ms-2">Cancel</a>
             </form>
