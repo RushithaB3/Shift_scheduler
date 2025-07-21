@@ -15,8 +15,6 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
-import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -125,28 +123,9 @@ public class ShiftController {
     }
 
     // Get zip codes by zone ID (for AJAX)
-    /*
-     * @GetMapping("/zone/{zoneId}/zipcodes")
-     * public ResponseEntity<List<ZipCodeDTO>> getZipCodesByZone(@PathVariable Long
-     * zoneId) {
-     * List<ZipCode> zipCodes = zipCodeRepo.findByZoneId(zoneId);
-     * List<ZipCodeDTO> dtoList = zipCodes.stream()
-     * .map(zip -> new ZipCodeDTO(zip.getId(), zip.getCode()))
-     * .collect(Collectors.toList());
-     * return ResponseEntity.ok(dtoList);
-     * }
-     */
-
     @GetMapping("/zone/{zoneId}/zipcodes")
-    public ResponseEntity<List<ZipCodeDTO>> getZipCodesByMultipleZone(@PathVariable List<Long> zoneId) {
-
-        List<ZipCode> zipCodes = new ArrayList<>();
-
-        for (Long id : zoneId) {
-            zipCodes.addAll(zipCodeRepo.findByZoneId(id));
-
-        }
-
+    public ResponseEntity<List<ZipCodeDTO>> getZipCodesByZone(@PathVariable Long zoneId) {
+        List<ZipCode> zipCodes = zipCodeRepo.findByZoneId(zoneId);
         List<ZipCodeDTO> dtoList = zipCodes.stream()
                 .map(zip -> new ZipCodeDTO(zip.getId(), zip.getCode()))
                 .collect(Collectors.toList());

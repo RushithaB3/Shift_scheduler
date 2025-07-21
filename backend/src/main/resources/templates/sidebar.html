@@ -1,0 +1,82 @@
+<!-- Updated sidebar.html -->
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Sidebar</title>
+</head>
+<body>
+    <style th:fragment="sidebar-styles">
+        .sidebar {
+            width: 240px;
+            background: linear-gradient(to bottom, #142871, #0c1a4e);
+            color: #ecf0f1;
+            padding: 30px 20px;
+            box-shadow: 2px 0 8px rgba(0, 0, 0, 0.15);
+            position: fixed;
+            top: 0;
+            left: 0;
+            min-height: 100vh;
+            z-index: 1000;
+        }
+        .sidebar h3 {
+            font-size: 22px;
+            font-weight: 600;
+            margin-bottom: 40px;
+            text-align: center;
+            color: #fbfbfa;
+            letter-spacing: 0.5px;
+        }
+        .sidebar a {
+            display: block;
+            padding: 12px 16px;
+            margin-bottom: 12px;
+            color: #ecf0f1;
+            text-decoration: none;
+            border-radius: 6px;
+            font-size: 15px;
+            transition: all 0.2s ease;
+        }
+        .sidebar a:hover {
+            background-color: #105396;
+            color: white;
+            transform: translateX(4px);
+        }
+        .sidebar a.active {
+            background-color: #105396;
+            font-weight: 600;
+            color: #ffffff;
+            box-shadow: 0 0 5px rgba(0,0,0,0.2);
+        }
+        @media (max-width: 767.98px) {
+            .sidebar {
+                display: none;
+            }
+        }
+    </style>
+
+    <!-- Offcanvas Sidebar for Mobile -->
+    <div th:fragment="mobile-sidebar">
+        <div class="offcanvas offcanvas-start" tabindex="-1" id="sidebar" aria-labelledby="sidebarLabel">
+            <div class="offcanvas-header bg-primary text-white">
+                <h5 class="offcanvas-title" id="sidebarLabel">Zentech</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+            </div>
+            <div class="offcanvas-body" style="background: linear-gradient(to bottom, #142871, #0c1a4e); color: #ecf0f1;">
+                <nav>
+                    <a th:href="@{/dashboard}" th:class="${currentPage == 'dashboard' ? 'active' : ''}">Dashboard</a>
+                    <a th:href="@{/schedule_manager}" th:class="${currentPage == 'schedule_manager' ? 'active' : ''}">Schedule Manager</a>
+                </nav>
+            </div>
+        </div>
+    </div>
+
+    <!-- Sidebar for Desktop -->
+    <div th:fragment="desktop-sidebar">
+        <div class="sidebar d-none d-md-block">
+            <h3>Zentech</h3>
+            <a th:href="@{/dashboard}" th:class="${currentPage == 'dashboard' ? 'active' : ''}">Dashboard</a>
+            <a th:href="@{/schedule_manager}" th:class="${currentPage == 'schedule_manager' ? 'active' : ''}">Schedule Manager</a>
+        </div>
+    </div>
+</body>
+</html>

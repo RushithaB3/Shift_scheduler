@@ -3,10 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="color-scheme" content="only light"> <!-- Retained in case helpful, but not primary fix -->
+    <meta name="color-scheme" content="only light">
     <title>Shift Management</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"/>
     <script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
+    <th:block th:insert="sidebar :: sidebar-styles" />
     <style>
         body {
             margin: 0;
@@ -20,41 +21,6 @@
             display: flex;
             flex: 1 0 auto;
         }
-        .sidebar {
-            width: 240px;
-            background: linear-gradient(to bottom, #142871, #0c1a4e);
-            color: #ecf0f1;
-            padding: 30px 20px;
-            box-shadow: 2px 0 8px rgba(0, 0, 0, 0.15);
-            position: fixed;
-            top: 0;
-            left: 0;
-            min-height: 100vh;
-            z-index: 1000;
-        }
-        .sidebar h3 {
-            font-size: 22px;
-            font-weight: 600;
-            margin-bottom: 40px;
-            text-align: center;
-            color: #fbfbfa;
-            letter-spacing: 0.5px;
-        }
-        .sidebar a {
-            display: block;
-            padding: 12px 16px;
-            margin-bottom: 12px;
-            color: #ecf0f1;
-            text-decoration: none;
-            border-radius: 6px;
-            font-size: 15px;
-            transition: all 0.2s ease;
-        }
-        .sidebar a:hover, .sidebar a.active {
-            background-color: #105396;
-            color: white;
-            font-weight: 600;
-        }
         .main-content {
             flex-grow: 1;
             margin-left: 240px;
@@ -64,56 +30,38 @@
             overflow-x: auto;
         }
         @media (max-width: 767.98px) {
-            .sidebar {
-                display: none;
-            }
             .main-content {
                 margin-left: 0;
                 padding: 15px;
             }
         }
-       /* Updated CSS for custom suggestions dropdown */
         #racfidSuggestions {
-            display: none; /* Hidden by default */
-            position: absolute; /* Position below input */
-            z-index: 1000; /* Above other elements */
-            background-color: white; /* Initial white background */
+            display: none;
+            position: absolute;
+            z-index: 1000;
+            background-color: white;
             border: 1px solid #ccc;
             border-radius: 0 0 4px 4px;
             max-height: 200px;
             overflow-y: auto;
-            width: 100%; /* Match input width */
-            margin-top: -1px; /* Seamless connection to input */
+            width: 100%;
+            margin-top: -1px;
             padding: 0;
         }
-
         .suggestion-item {
             padding: 8px 12px;
-            color: black; /* Initial black text */
+            color: black;
             cursor: pointer;
         }
-
         .suggestion-item:hover,
         .suggestion-item.active {
-            background-color: rgb(120, 170, 255); /* Hover blue background */
-            color: white; /* Hover white text */
+            background-color: rgb(120, 170, 255);
+            color: white;
         }
     </style>
 </head>
 <body>
-    <!-- Offcanvas Sidebar for Mobile -->
-    <div class="offcanvas offcanvas-start" tabindex="-1" id="sidebar" aria-labelledby="sidebarLabel">
-        <div class="offcanvas-header bg-primary text-white">
-            <h5 class="offcanvas-title" id="sidebarLabel">Zentech</h5>
-            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="offcanvas" aria-label="Close"></button>
-        </div>
-        <div class="offcanvas-body" style="background: linear-gradient(to bottom, #142871, #0c1a4e); color: #ecf0f1;">
-            <nav>
-                <a th:href="@{/dashboard}" href="/dashboard">Dashboard</a>
-                <a th:href="@{/schedule_manager}" href="/schedule_manager" class="active">Schedule Manager</a>
-            </nav>
-        </div>
-    </div>
+    <div th:replace="sidebar :: mobile-sidebar"></div>
 
     <!-- Main Content Area -->
     <div class="d-flex flex-column flex-grow-1">
@@ -127,12 +75,7 @@
             </div>
         </nav>
 
-        <!-- Sidebar for Desktop -->
-        <div class="sidebar d-none d-md-block">
-            <h3>Zentech</h3>
-            <a th:href="@{/dashboard}" href="/dashboard">Dashboard</a>
-            <a th:href="@{/schedule_manager}" href="/schedule_manager" class="active">Schedule Manager</a>
-        </div>
+        <div th:replace="sidebar :: desktop-sidebar"></div>
 
         <!-- Main Content -->
         <div class="main-content">
@@ -143,12 +86,10 @@
             <!-- Add Shift Form -->
             <form th:action="@{/shifts/save}" th:object="${shiftForm}" method="post" class="row g-3 border p-4 rounded shadow-sm">
                 <input type="hidden" th:field="*{id}" />
-                <div class="col-12 col-md-3 position-relative"> <!-- Position-relative for absolute positioning -->
+                <div class="col-12 col-md-3 position-relative">
                     <label class="form-label">RACF ID</label>
                     <input type="text" th:field="*{racfid}" id="racfid" class="form-control" placeholder="Search RACF ID (e.g., u001)" required th:readonly="${shiftForm.id != null}" autocomplete="off" />
-                    <div id="racfidSuggestions">
-                        <!-- Items populated dynamically via JS -->
-                    </div>
+                    <div id="racfidSuggestions"></div>
                 </div>
                 <div class="col-12 col-md-3">
                     <label class="form-label">First Name</label>
@@ -164,7 +105,7 @@
                 </div>
                 <div class="col-12 col-md-3">
                     <label class="form-label">Zone</label>
-                    <select th:field="*{zone.id}" id="zoneSelect" class="form-select" multiple required>
+                    <select th:field="*{zone.id}" id="zoneSelect" class="form-select" required>
                         <option value="">Select Zone</option>
                         <option th:each="z : ${zones}" th:value="${z.id}" th:text="${z.name}" th:selected="${z.id == shiftForm.zone?.id}"></option>
                     </select>
@@ -198,8 +139,8 @@
                     <thead>
                         <tr>
                             <th>RACF ID</th>
-                            <th>Name</th>
                             <th>Title</th>
+                            <th>Name</th>
                             <th>Email</th>
                             <th>Phone Number</th>
                             <th>Zone</th>
@@ -239,11 +180,11 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script>
     $(document).ready(function () {
-        // New: Fetch all RACFIDs on page load for suggestions
+        // Fetch all RACFIDs on page load for suggestions
         let allRacfids = [];
         $.get('/api/users/racfids', function (data) {
             allRacfids = data;
-            populateSuggestions(allRacfids); // Initial full list
+            populateSuggestions(allRacfids);
         }).fail(function () {
             console.error('Error fetching RACFIDs');
         });
@@ -253,7 +194,7 @@
             const dropdown = $('#racfidSuggestions');
             dropdown.empty();
             $.each(racfids, function (index, racfid) {
-                dropdown.append('<div class="suggestion-item" data-value="' + racfid + '">' + racfid + '</div>');
+                dropdown.append(`<div class="suggestion-item" data-value="${racfid}">${racfid}</div>`);
             });
         }
 
@@ -262,12 +203,8 @@
             const query = $(this).val().toLowerCase();
             const filtered = allRacfids.filter(racfid => racfid.toLowerCase().includes(query));
             populateSuggestions(filtered);
-            if (filtered.length > 0) {
-                $('#racfidSuggestions').show();
-            } else {
-                $('#racfidSuggestions').hide();
-            }
-            fetchUserDetails(); // Also fetch details on input
+            $('#racfidSuggestions').toggle(filtered.length > 0);
+            fetchUserDetails();
         });
 
         // Show on focus
@@ -279,30 +216,38 @@
 
         // Hide on blur (with delay for clicks)
         $('#racfid').on('blur', function () {
-            setTimeout(() => $('#racfidSuggestions').hide(), 100);
+            setTimeout(() => $('#racfidSuggestions').hide(), 200); // Increased delay
         });
 
         // Handle item clicks
-        $('#racfidSuggestions').on('click', '.suggestion-item', function () {
-            $('#racfid').val($(this).data('value'));
-            $('#racfidSuggestions').hide();
-            fetchUserDetails();
+        $('#racfidSuggestions').on('click', '.suggestion-item', function (e) {
+            e.preventDefault(); // Prevent any default behavior
+            const racfid = $(this).attr('data-value'); // Use attr() for reliability
+            if (racfid) {
+                $('#racfid').val(racfid);
+                $('#racfidSuggestions').hide();
+                fetchUserDetails();
+            } else {
+                console.error('No data-value found for suggestion item');
+            }
         });
 
-        // Basic keyboard navigation (optional but improves UX)
+        // Basic keyboard navigation
         let currentFocus = -1;
         $('#racfid').on('keydown', function (e) {
             const items = $('#racfidSuggestions .suggestion-item');
             if (e.keyCode === 40) { // Down
+                e.preventDefault();
                 currentFocus++;
                 addActive(items);
             } else if (e.keyCode === 38) { // Up
+                e.preventDefault();
                 currentFocus--;
                 addActive(items);
             } else if (e.keyCode === 13) { // Enter
                 e.preventDefault();
                 if (currentFocus > -1) {
-                    items.eq(currentFocus).click();
+                    items.eq(currentFocus).trigger('click');
                 }
             } else if (e.keyCode === 27) { // Esc
                 $('#racfidSuggestions').hide();
@@ -313,7 +258,7 @@
             if (!items.length) return;
             removeActive(items);
             if (currentFocus >= items.length) currentFocus = 0;
-            if (currentFocus < 0) currentFocus = (items.length - 1);
+            if (currentFocus < 0) currentFocus = items.length - 1;
             items.eq(currentFocus).addClass('active');
             items.eq(currentFocus)[0].scrollIntoView({ block: 'nearest' });
         }
@@ -322,9 +267,7 @@
             items.removeClass('active');
         }
 
-        // Fetch user details when RACFID changes or blurred
-        $('#racfid').on('change blur', fetchUserDetails);
-
+        // Fetch user details
         function fetchUserDetails() {
             let racfid = $('#racfid').val().trim();
             if (racfid) {
@@ -333,13 +276,11 @@
                     $('#lastName').val(data.lastName || '');
                     $('#email').val(data.email || '');
                 }).fail(function () {
-                    // Clear fields if RACFID is invalid
                     $('#firstName').val('');
                     $('#lastName').val('');
                     $('#email').val('');
                 });
             } else {
-                // Clear fields if RACFID is empty
                 $('#firstName').val('');
                 $('#lastName').val('');
                 $('#email').val('');
@@ -354,7 +295,6 @@
                     $.each(data, function (index, zip) {
                         $('#zipSelect').append(new Option(zip.code, zip.id));
                     });
-                    // Set pre-selected zip if in edit mode
                     let preZipId = $('#preZipId').val();
                     if (preZipId) {
                         $('#zipSelect').val(preZipId);
@@ -379,7 +319,9 @@
         loadZipCodes(initialZoneId);
 
         // On page load: If racfid pre-filled (edit), fetch user details
-        fetchUserDetails();
+        if ($('#racfid').val()) {
+            fetchUserDetails();
+        }
     });
     </script>
 </body>

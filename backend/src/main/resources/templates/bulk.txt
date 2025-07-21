@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Add Bulk Shift Assignments</title>
+    <!-- Include Bootstrap for styling -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Include Select2 for multi-select dropdowns -->
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+    <!-- Datepicker: Use Bootstrap Datepicker -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.9.0/css/bootstrap-datepicker.min.css" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.9.0/js/bootstrap-datepicker.min.js"></script>
+    <th:block th:insert="sidebar :: sidebar-styles" />
+    <style>
+        body {
+            margin: 0;
+            font-family: 'Segoe UI', sans-serif;
+            background-color: #f8f9fa;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+        .d-flex {
+            display: flex;
+            flex: 1 0 auto;
+        }
+        .main-content {
+            flex-grow: 1;
+            margin-left: 240px;
+            padding: 30px;
+        }
+        @media (max-width: 767.98px) {
+            .main-content {
+                margin-left: 0;
+                padding: 15px;
+            }
+        }
+        .assignment-group { border: 1px solid #ddd; padding: 15px; margin-bottom: 15px; border-radius: 5px; }
+        .preview-table { margin-top: 20px; }
+    </style>
+</head>
+<body>
+    <div th:replace="sidebar :: mobile-sidebar"></div>
+
+    <!-- Main Content Area -->
+    <div class="d-flex flex-column flex-grow-1">
+        <!-- Navbar for Mobile -->
+        <nav class="navbar navbar-expand-lg navbar-light bg-light d-md-none">
+            <div class="container-fluid">
+                <button class="navbar-toggler" type="button" data-bs-toggle="offcanvas" data-bs-target="#sidebar" aria-controls="sidebar">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+                <span class="navbar-brand">Zentech</span>
+            </div>
+        </nav>
+
+        <div th:replace="sidebar :: desktop-sidebar"></div>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <h2>Add Bulk Shift Assignments</h2>
+            
+            <form id="bulkShiftForm" th:action="@{/shifts/bulk-save}" method="post">  <!-- Adjust endpoint as needed -->
+                <!-- Shift Details (Shared for all assignments) -->
+                <div class="mb-3">
+                    <label for="name" class="form-label">Shift Name</label>
+                    <input type="text" class="form-control" id="name" name="name" required>
+                </div>
+                <div class="row mb-3">
+                    <div class="col">
+                        <label for="startDate" class="form-label">Start Date</label>
+                        <input type="text" class="form-control datepicker" id="startDate" name="startDate" required>
+                    </div>
+                    <div class="col">
+                        <label for="endDate" class="form-label">End Date</label>
+                        <input type="text" class="form-control datepicker" id="endDate" name="endDate" required>
+                    </div>
+                </div>
+                
+                <!-- Bulk Assignments -->
+                <h4>Assignment Groups</h4>
+                <div id="assignmentGroups"></div>
+                <button type="button" class="btn btn-secondary mb-3" onclick="addGroup()">+ Add Group</button>
+                
+                <!-- Preview Table -->
+                <h4>Preview</h4>
+                <table class="table table-bordered preview-table">
+                    <thead>
+                        <tr>
+                            <th>Users</th>
+                            <th>Zone</th>
+                            <th>Zipcodes</th>
+                            <th>Shift Dates</th>
+                        </tr>
+                    </thead>
+                    <tbody id="previewBody"></tbody>
+                </table>
+                
+                <button type="submit" class="btn btn-primary">Submit</button>
+                <button type="button" class="btn btn-secondary" onclick="history.back()">Cancel</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // Initialize datepickers
+        $('.datepicker').datepicker({ format: 'yyyy-mm-dd' });
+
+        // Initialize select2 on load (for dynamic elements, init after add)
+        $('.select2').select2();
+
+        let groupCounter = 0;
+
+        function addGroup() {
+            groupCounter++;
+            const groupHtml = `
+                <div class="assignment-group" id="group${groupCounter}">
+                    <h5>Group ${groupCounter}</h5>
+                    <div class="mb-3">
+                        <label for="users${groupCounter}" class="form-label">Users</label>
+                        <select class="form-select select2" id="users${groupCounter}" name="assignments[${groupCounter - 1}].userIds" multiple onchange="updatePreview()">
+                            <!-- Populate with users from model -->
+                            <option th:each="user : ${users}" th:value="${user.id}" th:text="${user.firstName + ' ' + user.lastName}"></option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="zone${groupCounter}" class="form-label">Zone</label>
+                        <select class="form-select" id="zone${groupCounter}" name="assignments[${groupCounter - 1}].zoneId" onchange="loadZipcodes(this.value, 'zip${groupCounter}'); updatePreview()">
+                            <option th:each="zone : ${zones}" th:value="${zone.id}" th:text="${zone.name}"></option>
+                        </select>
+                    </div>
+                    <div class="mb-3 form-check">
+                        <input type="checkbox" class="form-check-input" id="allZip${groupCounter}" onchange="toggleZipSelect('allZip${groupCounter}', 'zip${groupCounter}'); updatePreview()">
+                        <label class="form-check-label" for="allZip${groupCounter}">All Zipcodes in Zone</label>
+                    </div>
+                    <div class="mb-3">
+                        <label for="zip${groupCounter}" class="form-label">Zipcodes</label>
+                        <select class="form-select select2" id="zip${groupCounter}" name="assignments[${groupCounter - 1}].zipCodeIds" multiple onchange="updatePreview()">
+                            <!-- Loaded dynamically via AJAX -->
+                        </select>
+                    </div>
+                    <button type="button" class="btn btn-danger btn-sm" onclick="removeGroup(${groupCounter})">Remove Group</button>
+                </div>
+            `;
+            document.getElementById('assignmentGroups').insertAdjacentHTML('beforeend', groupHtml);
+            // Init select2 for new selects
+            $(`#users${groupCounter}`).select2();
+            $(`#zip${groupCounter}`).select2();
+            updatePreview();
+        }
+
+        function removeGroup(counter) {
+            document.getElementById(`group${counter}`).remove();
+            updatePreview();
+        }
+
+        function toggleZipSelect(checkboxId, selectId) {
+            const checkbox = document.getElementById(checkboxId);
+            const select = document.getElementById(selectId);
+            select.disabled = checkbox.checked;
+            if (checkbox.checked) {
+                select.value = null;
+                $(`#${selectId}`).val(null).trigger('change');  // Clear select2
+            }
+            updatePreview();
+        }
+
+        function loadZipcodes(zoneId, selectId) {
+            if (!zoneId) return;
+            fetch(`/shifts/zone/${zoneId}/zipcodes`)  // Use your existing endpoint
+                .then(response => response.json())
+                .then(data => {
+                    const select = document.getElementById(selectId);
+                    select.innerHTML = '';
+                    data.forEach(zip => {
+                        const option = document.createElement('option');
+                        option.value = zip.id;
+                        option.textContent = zip.code;
+                        select.appendChild(option);
+                    });
+                    $(`#${selectId}`).select2();  // Re-init select2
+                })
+                .catch(error => console.error('Error loading zipcodes:', error));
+        }
+
+        function updatePreview() {
+            const previewBody = document.getElementById('previewBody');
+            previewBody.innerHTML = '';
+            const startDate = document.getElementById('startDate').value;
+            const endDate = document.getElementById('endDate').value;
+            const dates = startDate && endDate ? `${startDate} to ${endDate}` : 'N/A';
+
+            for (let i = 1; i <= groupCounter; i++) {
+                const group = document.getElementById(`group${i}`);
+                if (!group) continue;
+                const users = Array.from(document.getElementById(`users${i}`).selectedOptions).map(o => o.text).join(', ') || 'N/A';
+                const zone = document.getElementById(`zone${i}`).options[document.getElementById(`zone${i}`).selectedIndex]?.text || 'N/A';
+                const allZip = document.getElementById(`allZip${i}`).checked ? 'All' : Array.from(document.getElementById(`zip${i}`).selectedOptions).map(o => o.text).join(', ') || 'N/A';
+                previewBody.innerHTML += `<tr><td>${users}</td><td>${zone}</td><td>${allZip}</td><td>${dates}</td></tr>`;
+            }
+        }
+
+        // Form submit handler (Spring binds to array/list of assignments)
+        document.getElementById('bulkShiftForm').addEventListener('submit', function(e) {
+            // Optional: Validate before submit (e.g., at least one group)
+            if (groupCounter === 0) {
+                alert('Add at least one assignment group.');
+                e.preventDefault();
+            }
+            updatePreview();  // Final preview update
+        });
+    </script>
+</body>
+</html>
