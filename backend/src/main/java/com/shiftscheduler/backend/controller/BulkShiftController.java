@@ -51,6 +51,7 @@ public class BulkShiftController {
         model.addAttribute("bulkShiftForm", new BulkShiftForm());
         model.addAttribute("users", userRepo.findAll());
         model.addAttribute("zones", zoneRepo.findAll());
+        model.addAttribute("shiftAssignments", shiftAssignmentRepo.findAll());
         return "add_bulk_shift";
     }
 
@@ -61,47 +62,62 @@ public class BulkShiftController {
         // Validate shared dates if sameDates is true
         if (form.isSameDates() && (form.getStartDate() == null || form.getEndDate() == null
                 || form.getStartDate().isAfter(form.getEndDate()))) {
-            redirectAttributes.addFlashAttribute("error", "Invalid shared dates.");
+            redirectAttributes.addFlashAttribute("error",
+                    "Invalid shared dates. Start date must be before or equal to end date.");
             return "redirect:/add_bulk_shift";
         }
 
         if (form.getAssignments() == null || form.getAssignments().isEmpty()) {
-            redirectAttributes.addFlashAttribute("error", "At least one assignment group required.");
+            redirectAttributes.addFlashAttribute("error", "At least one assignment group is required.");
             return "redirect:/add_bulk_shift";
         }
 
         // Process each assignment group
-        for (AssignmentForm ass : form.getAssignments()) {
+        for (int i = 0; i < form.getAssignments().size(); i++) {
+            AssignmentForm ass = form.getAssignments().get(i);
             // Validate per-group dates if sameDates is false
             if (!form.isSameDates() && (ass.getStartDate() == null || ass.getEndDate() == null
                     || ass.getStartDate().isAfter(ass.getEndDate()))) {
-                redirectAttributes.addFlashAttribute("error", "Invalid dates for group.");
+                redirectAttributes.addFlashAttribute("error",
+                        "Invalid dates for group " + (i + 1) + ". Start date must be before or equal to end date.");
                 return "redirect:/add_bulk_shift";
             }
 
-            // Create a new BulkShift for each group (or use shared dates)
+            // Validate user IDs
+            if (ass.getUserIds() == null || ass.getUserIds().isEmpty()) {
+                redirectAttributes.addFlashAttribute("error",
+                        "At least one user is required for group " + (i + 1) + ".");
+                return "redirect:/add_bulk_shift";
+            }
+
+            // Validate zone IDs
+            if (ass.getZoneIds() == null || ass.getZoneIds().isEmpty()) {
+                redirectAttributes.addFlashAttribute("error",
+                        "At least one zone is required for group " + (i + 1) + ".");
+                return "redirect:/add_bulk_shift";
+            }
+
+            // Create a new BulkShift for each group
             BulkShift bulkShift = new BulkShift();
             bulkShift.setStartDate(form.isSameDates() ? form.getStartDate() : ass.getStartDate());
             bulkShift.setEndDate(form.isSameDates() ? form.getEndDate() : ass.getEndDate());
-            // Optional: set racfid if you have auth, e.g.,
-            // bulkShift.setRacfid(currentUserRacfid);
             bulkShiftRepo.save(bulkShift);
 
             // Process multiple zones
             for (Long zoneId : ass.getZoneIds()) {
                 Optional<Zone> zoneOpt = zoneRepo.findById(zoneId);
                 if (zoneOpt.isEmpty()) {
-                    redirectAttributes.addFlashAttribute("error", "Invalid zone ID: " + zoneId);
+                    redirectAttributes.addFlashAttribute("error",
+                            "Invalid zone ID: " + zoneId + " in group " + (i + 1) + ".");
                     return "redirect:/add_bulk_shift";
                 }
                 Zone zone = zoneOpt.get();
 
-                List<ZipCode> allZipCodesInZone = zipCodeRepo.findByZoneId(zoneId);
-
                 for (Long userId : ass.getUserIds()) {
                     Optional<User> userOpt = userRepo.findById(userId);
                     if (userOpt.isEmpty()) {
-                        redirectAttributes.addFlashAttribute("error", "Invalid user ID: " + userId);
+                        redirectAttributes.addFlashAttribute("error",
+                                "Invalid user ID: " + userId + " in group " + (i + 1) + ".");
                         return "redirect:/add_bulk_shift";
                     }
                     User user = userOpt.get();
@@ -120,7 +136,8 @@ public class BulkShiftController {
                             Optional<ZipCode> zipOpt = zipCodeRepo.findById(zipId);
                             if (zipOpt.isEmpty() || !zipOpt.get().getZone().getId().equals(zoneId)) {
                                 redirectAttributes.addFlashAttribute("error",
-                                        "Invalid zipcode ID: " + zipId + " for zone " + zoneId);
+                                        "Invalid zipcode ID: " + zipId + " for zone " + zoneId + " in group " + (i + 1)
+                                                + ".");
                                 return "redirect:/add_bulk_shift";
                             }
                             ZipCode zip = zipOpt.get();

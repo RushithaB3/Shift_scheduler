@@ -1,35 +1,90 @@
+<!DOCTYPE html>
 <html lang="en" xmlns:th="http://www.thymeleaf.org">
-    <head>
-        <meta charset="UTF-8">
-        <title>Add Bulk Shift Assignments</title>
-        <!-- Include Bootstrap for styling -->
-        <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-        <!-- Include Select2 for multi-select dropdowns -->
-        <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
-        <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-        <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
-        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"/>   <!-- Datepicker: Use Bootstrap Datepicker -->
-        <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.9.0/css/bootstrap-datepicker.min.css" rel="stylesheet">
-        <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.9.0/js/bootstrap-datepicker.min.js"></script>
-        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-        <th:block th:insert="sidebar :: sidebar-styles" />
-        <style>
-            body {
-                margin: 0;
-                font-family: 'Segoe UI', sans-serif;
-                background-color: #f8f9fa;
-                display: flex;
-                flex-direction: column;
-                min-height: 100vh;
-            }
-            .d-flex {
-                display: flex;
-                flex: 1 0 auto;
-            }
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="color-scheme" content="only light">
+    <title>Add Bulk Shift Assignments</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" />
+    <script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+    <th:block th:insert="sidebar :: sidebar-styles" />
+    <style>
+        body {
+            margin: 0;
+            font-family: 'Segoe UI', sans-serif;
+            background-color: #f8f9fa;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
         .main-content {
             flex-grow: 1;
             margin-left: 240px;
             padding: 30px;
+        }
+        .card {
+            margin-bottom: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .form-section {
+            margin-bottom: 20px;
+        }
+        .user-entry {
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            margin-bottom: 15px;
+            background-color: #fff;
+        }
+        .user-detail {
+            display: flex;
+            align-items: center;
+            padding: 8px;
+            border: 1px solid #e9ecef;
+            border-radius: 0.25rem;
+            background-color: #f8f9fa;
+            margin-bottom: 8px;
+        }
+        .table th, .table td {
+            vertical-align: middle;
+        }
+        .error-message {
+            color: #dc3545;
+            font-size: 0.875rem;
+            display: none;
+            margin-top: 5px;
+        }
+        .select2-container .select2-selection--multiple {
+            min-height: 38px;
+            border: 1px solid #ced4da;
+            border-radius: 0.25rem;
+        }
+        .select2-container--default .select2-selection--multiple .select2-selection__choice {
+            background-color: #e9ecef;
+            border: 1px solid #ced4da;
+            border-radius: 0.25rem;
+            padding: 0 5px;
+            color: #212529;
+        }
+        .select2-container--default .select2-selection--multiple .select2-selection__choice__remove {
+            color: #dc3545;
+            font-weight: bold;
+            margin-right: 5px;
+            font-size: 1.5em;
+            cursor: pointer;
+        }
+        .select2-container--default .select2-selection--multiple .select2-selection__choice__remove:hover {
+            color: #bd2130;
+        }
+        .select2-dropdown {
+            border: 1px solid #ced4da;
+            border-radius: 0.25rem;
+        }
+        .select2-results__option {
+            padding: 6px 12px;
         }
         @media (max-width: 767.98px) {
             .main-content {
@@ -37,18 +92,11 @@
                 padding: 15px;
             }
         }
-        .assignment-group { border: 1px solid #ddd; padding: 15px; margin-bottom: 15px; border-radius: 5px; }
-        .preview-table { margin-top: 20px; }
-        .config-toggles { margin-bottom: 20px; }
     </style>
 </head>
 <body>
     <div th:replace="sidebar :: mobile-sidebar"></div>
-
-    <!-- Main Content Area -->
-</tr>
     <div class="d-flex flex-column flex-grow-1">
-        <!-- Navbar for Mobile -->
         <nav class="navbar navbar-expand-lg navbar-light bg-light d-md-none">
             <div class="container-fluid">
                 <button class="navbar-toggler" type="button" data-bs-toggle="offcanvas" data-bs-target="#sidebar" aria-controls="sidebar">
@@ -57,303 +105,369 @@
                 <span class="navbar-brand">Zentech</span>
             </div>
         </nav>
-
         <div th:replace="sidebar :: desktop-sidebar"></div>
-
-        <!-- Main Content -->
         <div class="main-content">
-            <h2>Add Bulk Shift Assignments</h2>
-
-                    <th>Name</th>
-            <form id="bulkShiftForm" th:action="@{/bulk-save}" method="post">
-                <div class="config-toggles">
-                    <div class="form-check form-switch mb-2">
-                        <input class="form-check-input" type="checkbox" id="multipleUsers" checked onchange="updateForm()">
-                        <label class="form-check-label" for="multipleUsers">Allow Multiple Users per Group</label>
-                    </div>
-                    <th>RACF ID</th>
-                    <div class="form-check form-switch mb-2">
-                        <input class="form-check-input" type="checkbox" id="multipleZones" checked onchange="updateForm()">
-                        <label class="form-check-label" for="multipleZones">Allow Multiple Zones per Group</label>
-                    </div>
-                    <div class="form-check form-switch mb-2">
-                        <input class="form-check-input" type="checkbox" id="multipleZipcodes" checked onchange="updateForm()">
-                        <label class="form-check-label" for="multipleZipcodes">Allow Multiple Zipcodes per Group</label>
-                    </div>
-                    <div class="form-check form-switch mb-2">
-                        <input class="form-check-input" type="checkbox" id="sameDates" checked onchange="toggleDates()">
-                        <label class="form-check-label" for="sameDates">Same Dates for All Groups</label>
+            <h2 class="mb-4 text-primary">Add Bulk Shift Assignments</h2>
+            <div th:if="${success}" class="alert alert-success" role="alert">
+                [[${success}]]
+            </div>
+            <div th:if="${error}" class="alert alert-danger" role="alert">
+                [[${error}]]
+            </div>
+            <form id="bulkShiftForm" th:action="@{/bulk-save}" method="post" class="card p-4 shadow-sm mb-4">
+                <!-- Same Dates Checkbox -->
+                <div class="form-check mb-3">
+                    <input type="checkbox" class="form-check-input" id="sameDates" name="sameDates" th:checked="${bulkShiftForm.sameDates}">
+                    <label class="form-check-label" for="sameDates">Use same dates for all assignments</label>
+                </div>
+                <!-- Shared Dates -->
+                <div id="sharedDates" class="form-section mb-4" style="display: none;">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="sharedStartDate" class="form-label">Start Date</label>
+                            <input type="date" class="form-control" id="sharedStartDate" name="startDate" th:value="${bulkShiftForm.startDate}">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="sharedEndDate" class="form-label">End Date</label>
+                            <input type="date" class="form-control" id="sharedEndDate" name="endDate" th:value="${bulkShiftForm.endDate}">
+                        </div>
                     </div>
                 </div>
-                
-                <!-- Shared Shift Details (shown if Same Dates is checked) -->
-                <div id="sharedDates" class="mb-3">
-                    <h4>Shift Dates</h4>
-                    <div class="row mb-3">
-                        <div class="col">
-                            <label for="startDate" class="form-label">Start Date</label>
-                            <input type="text" class="form-control datepicker" id="startDate" name="startDate" required>
-                            <!-- Configuration Toggles -->
+                <!-- Assignment Groups -->
+                <div id="assignmentGroups">
+                    <div class="assignment-group user-entry">
+                        <h5>Assignment Group</h5>
+                        <!-- RACF ID Multi-Select -->
+                        <div class="mb-3">
+                            <label for="racfIdSelect0" class="form-label">RACF IDs</label>
+                            <select multiple class="form-select racf-id-select" id="racfIdSelect0" name="assignments[0].userIds" required>
+                                <option th:each="user : ${users}" th:value="${user.id}" th:text="${user.racfid}"></option>
+                            </select>
+                            <div class="user-details mt-2"></div>
+                            <div class="error-message" id="userError0">Please select at least one user.</div>
                         </div>
-                        <div class="col">
-                            <label for="endDate" class="form-label">End Date</label>
-                            <input type="text" class="form-control datepicker" id="endDate" name="endDate" required>
+                        <!-- Zones -->
+                        <div class="mb-3">
+                            <label for="zoneIds0" class="form-label">Zones</label>
+                            <select multiple class="form-select zone-select" id="zoneIds0" name="assignments[0].zoneIds" required>
+                                <option th:each="zone : ${zones}" th:value="${zone.id}" th:text="${zone.name}"></option>
+                            </select>
+                            <div class="error-message" id="zoneError0">Please select at least one zone.</div>
                         </div>
-                        <!DOCTYPE html>
+                        <!-- Zip Codes -->
+                        <div class="mb-3">
+                            <label for="zipCodeIds0" class="form-label">Zip Codes (Optional)</label>
+                            <select multiple class="form-select zipcode-select" id="zipCodeIds0" name="assignments[0].zipCodeIds">
+                                <!-- Populated dynamically -->
+                            </select>
+                        </div>
+                        <!-- Individual Dates -->
+                        <div class="individual-dates row" style="display: none;">
+                            <div class="col-md-6 mb-3">
+                                <label for="startDate0" class="form-label">Start Date</label>
+                                <input type="date" class="form-control" name="assignments[0].startDate" id="startDate0">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="endDate0" class="form-label">End Date</label>
+                                <input type="date" class="form-control" name="assignments[0].endDate" id="endDate0">
+                            </div>
+                        </div>
                     </div>
                 </div>
-
-                <!-- Bulk Assignments -->
-                <h4>Assignment Groups</h4>
-                <div id="assignmentGroups"></div>
-                <button type="button" class="btn btn-secondary mb-3" onclick="addGroup()">+ Add Group</button>
-
-                <!-- Preview Table -->
-                <h4>Preview</h4>
-                <table class="table table-bordered preview-table">
-                </tr>
-                </tr>
-                <thead>
-                    <tr>
-                        <th>Users</th>
-                        <th>Zone(s)</th>
-                        <th>Zipcode(s)</th>
-                        <th>Shift Dates</th>
-                    </thead>
-                    <tbody id="previewBody"></tbody>
-                </table>
-                
-                <button type="submit" class="btn btn-primary">Submit</button>
-                <button type="button" class="btn btn-secondary" onclick="history.back()">Cancel</button>
+                <button type="button" class="btn btn-outline-primary mb-3" id="addGroup">Add Another Group</button>
+                <!-- Submit and Cancel -->
+                <div class="mt-4">
+                    <button type="submit" class="btn btn-primary" id="submitButton">Submit</button>
+                    <button type="button" class="btn btn-secondary" onclick="history.back()">Cancel</button>
+                </div>
             </form>
+            <!-- Added Groups Table -->
+            <div class="card shadow-sm mb-5">
+                <div class="card-body">
+                    <h4 class="card-title">Added Groups</h4>
+                    <div class="table-responsive">
+                        <table class="table table-bordered table-striped">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Group</th>
+                                    <th>RACF IDs</th>
+                                    <th>Zones</th>
+                                    <th>Zip Codes</th>
+                                    <th>Start Date</th>
+                                    <th>End Date</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="addedGroupsTable">
+                                <!-- Dynamically populated by JavaScript -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
-    <th>Name</th>
-    <th>Name</th>
-    
-    <div class="table-responsive">
-        <table class="table table-bordered table-hover">
-            <thead>
-                <tr>
-                    <th>RACF ID</th>
-                    <th>RACF ID</th>
-                    <th>Title</th>
-                    <th>Email</th>
-                    <th>Phone Number</th>
-                    <th>Zone</th>
-                    <th>Zip Code</th>
-                    <th>Start</th>
-                    <th>End</th>
-                    <th>Actions</th>
-                </tr>
-            </thead>
-            <tbody>
-                <td>>Phone Number</td>
-                <td>Zone</td>
-                <td>Zip Code</td>
-                <td>Start</td>
-                <td>End</td>
-                <td>Action</td>
-                <!-- <tr th:each="shift : ${shifts}">
-                    <td th:text="${shift.racfid}">u001</td>
-                    <td th:text="${shift.user.title}">Title</td>
-                    <td th:text="${shift.user.firstName + ' ' + shift.user.lastName}">Name</td>
-                    <td th:text="${shift.user.email}">Email</td>
-                    <td th:text="${shift.user.phoneNumber}">Phone</td>
-                    <td th:text="${shift.zone.name}">Zone</td>
-                    <td th:text="${shift.zipCode.code}">Zip</td>
-                    <td th:text="${shift.startDate}">2025-07-01</td>
-                    <td th:text="${shift.endDate}">2025-07-03</td>
-                    <td>
-                        <a th:href="@{'/shifts/edit/' + ${shift.racfid}}" class="btn btn-sm btn-primary">Edit</a>
-                        <a th:href="@{'/shifts/delete/' + ${shift.racfid}}" class="btn btn-sm btn-danger"
-                        onclick="return confirm('Delete this shift?')">Delete</a>
-                            </td>
-                        </tr>
-                        <tr th:if="${shifts.isEmpty()}">
-                            <td colspan="10" class="text-center text-muted">No shifts available.</td>
-                        </tr> -->
-                    </tbody>
-                </table>
-            </div>
-            
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-        // Initialize datepickers
-        $('.datepicker').datepicker({ format: 'yyyy-mm-dd' });
-        
-        // Initialize select2 on load
-        $('.select2').select2();
-
-        let groupCounter = 0;
-
-        function toggleDates() {
-            const sameDates = document.getElementById('sameDates').checked;
-            document.getElementById('sharedDates').style.display = sameDates ? 'block' : 'none';
-            updateForm();
-        }
-
-        function updateForm() {
-            // Rebuild groups to reflect toggle states
-            const groups = document.getElementById('assignmentGroups');
-            const existingGroups = groups.innerHTML;
-            groups.innerHTML = '';
-            groupCounter = 0;
-            if (existingGroups) {
-                // Re-add groups to trigger correct field rendering
-                const tempCounter = document.querySelectorAll('.assignment-group').length;
-                for (let i = 0; i < tempCounter; i++) {
-                    addGroup();
-                }
-            }
-            updatePreview();
-        }
-
-        function addGroup() {
-            groupCounter++;
-            const multipleUsers = document.getElementById('multipleUsers').checked;
-            const multipleZones = document.getElementById('multipleZones').checked;
-            const multipleZipcodes = document.getElementById('multipleZipcodes').checked;
-            const sameDates = document.getElementById('sameDates').checked;
-
-            const groupHtml = `
-                <div class="assignment-group" id="group${groupCounter}">
-                    <h5>Group ${groupCounter}</h5>
-                    <div class="mb-3">
-                        <label for="users${groupCounter}" class="form-label">Users</label>
-                        <select class="form-select select2" id="users${groupCounter}" name="assignments[${groupCounter - 1}].userIds" ${multipleUsers ? 'multiple' : ''} onchange="updatePreview()">
-                            <option th:each="user : ${users}" th:value="${user.id}" th:text="${user.firstName + ' ' + user.lastName}"></option>
-                        </select>
-                    </div>
-                    <div class="mb-3">
-                        <label for="zone${groupCounter}" class="form-label">Zone${multipleZones ? '(s)' : ''}</label>
-                        <select class="form-select select2" id="zone${groupCounter}" name="assignments[${groupCounter - 1}].zoneId" ${multipleZones ? 'multiple' : ''} onchange="loadZipcodes(this.value, 'zip${groupCounter}'); updatePreview()">
-                            <option th:each="zone : ${zones}" th:value="${zone.id}" th:text="${zone.name}"></option>
-                        </select>
-                    </div>
-                    <div class="mb-3 form-check">
-                        <input type="checkbox" class="form-check-input" id="allZip${groupCounter}" onchange="toggleZipSelect('allZip${groupCounter}', 'zip${groupCounter}'); updatePreview()">
-                        <label class="form-check-label" for="allZip${groupCounter}">All Zipcodes in Zone${multipleZones ? '(s)' : ''}</label>
-                    </div>
-                    <div class="mb-3">
-                        <label for="zip${groupCounter}" class="form-label">Zipcode${multipleZipcodes ? '(s)' : ''}</label>
-                        <select class="form-select select2" id="zip${groupCounter}" name="assignments[${groupCounter - 1}].zipCodeIds" ${multipleZipcodes ? 'multiple' : ''} onchange="updatePreview()">
-                            <!-- Loaded dynamically via AJAX -->
-                        </select>
-                    </div>
-                    ${!sameDates ? `
-                    <div class="row mb-3">
-                        <div class="col">
-                            <label for="startDate${groupCounter}" class="form-label">Start Date</label>
-                            <input type="text" class="form-control datepicker" id="startDate${groupCounter}" name="assignments[${groupCounter - 1}].startDate" required>
-                        </div>
-                        <div class="col">
-                            <label for="endDate${groupCounter}" class="form-label">End Date</label>
-                            <input type="text" class="form-control datepicker" id="endDate${groupCounter}" name="assignments[${groupCounter - 1}].endDate" required>
-                        </div>
-                    </div>
-                    ` : ''}
-                    <button type="button" class="btn btn-danger btn-sm" onclick="removeGroup(${groupCounter})">Remove Group</button>
-                </div>
-                `;
-           
-            document.getElementById('assignmentGroups').insertAdjacentHTML('beforeend', groupHtml);
-            // Init select2 and datepicker for new selects
-            $(`#users${groupCounter}`).select2();
-            $(`#zone${groupCounter}`).select2();
-            $(`#zip${groupCounter}`).select2();
-            $(`#startDate${groupCounter}, #endDate${groupCounter}`).datepicker({ format: 'yyyy-mm-dd' });
-            updatePreview();
-        }
-
-        function removeGroup(counter) {
-            document.getElementById(`group${counter}`).remove();
-            updatePreview();
-        }
-
-        function toggleZipSelect(checkboxId, selectId) {
-            const checkbox = document.getElementById(checkboxId);
-            const select = document.getElementById(selectId);
-            select.disabled = checkbox.checked;
-            if (checkbox.checked) {
-                select.value = null;
-                $(`#${selectId}`).val(null).trigger('change');
-            }
-            updatePreview();
-        }
-
-        function loadZipcodes(zoneIds, selectId) {
-            if (!zoneIds) return;
-            // Convert single value to array for consistency
-            const ids = Array.isArray(zoneIds) ? zoneIds : [zoneIds];
-            fetch(`/shifts/zone/${ids.join(',')}/zipcodes`)  // Use existing endpoint, expects comma-separated IDs
-                .then(response => response.json())
-                .then(data => {
-                    const select = document.getElementById(selectId);
-                    select.innerHTML = '';
-                    data.forEach(zip => {
-                        const option = document.createElement('option');
-                        option.value = zip.id;
-                        option.textContent = zip.code;
-                        select.appendChild(option);
-                    });
-                    $(`#${selectId}`).select2();
-                })
-                .catch(error => console.error('Error loading zipcodes:', error));
-        }
-
-        function updatePreview() {
-            const previewBody = document.getElementById('previewBody');
-            previewBody.innerHTML = '';
-            const sameDates = document.getElementById('sameDates').checked;
-            const sharedStartDate = document.getElementById('startDate')?.value;
-            const sharedEndDate = document.getElementById('endDate')?.value;
-            const sharedDates = sharedStartDate && sharedEndDate ? `${sharedStartDate} to ${sharedEndDate}` : 'N/A';
-
-            for (let i = 1; i <= groupCounter; i++) {
-                const group = document.getElementById(`group${i}`);
-                if (!group) continue;
-                const users = Array.from(document.getElementById(`users${i}`).selectedOptions).map(o => o.text).join(', ') || 'N/A';
-                const zones = Array.from(document.getElementById(`zone${i}`).selectedOptions).map(o => o.text).join(', ') || 'N/A';
-                const allZip = document.getElementById(`allZip${i}`).checked ? 'All' : Array.from(document.getElementById(`zip${i}`).selectedOptions).map(o => o.text).join(', ') || 'N/A';
-                const dates = sameDates ? sharedDates : 
-                    (document.getElementById(`startDate${i}`)?.value && document.getElementById(`endDate${i}`)?.value ? 
-                    `${document.getElementById('startDate' + i).value} to ${document.getElementById('endDate' + i).value}` : 'N/A');
-                previewBody.innerHTML += `<tr><td>${users}</td><td>${zones}</td><td>${allZip}</td><td>${dates}</td></tr>`;
-            }
-        }
-
-        // Form submit handler
-        document.getElementById('bulkShiftForm').addEventListener('submit', function(e) {
-            if (groupCounter === 0) {
-                alert('Add at least one assignment group.');
-                e.preventDefault();
-            }
-            const sameDates = document.getElementById('sameDates').checked;
-            if (sameDates) {
-                const startDate = document.getElementById('startDate')?.value;
-                const endDate = document.getElementById('endDate')?.value;
-                if (!startDate || !endDate) {
-                    alert('Please provide shared start and end dates.');
-                    e.preventDefault();
-                }
-            } else {
-                for (let i = 1; i <= groupCounter; i++) {
-                    const group = document.getElementById(`group${i}`);
-                    if (!group) continue;
-                    const startDate = document.getElementById(`startDate${i}`)?.value;
-                    const endDate = document.getElementById(`endDate${i}`)?.value;
-                    if (!startDate || !endDate) {
-                        alert(`Please provide start and end dates for Group ${i}.`);
-                        e.preventDefault();
-                    }
-                }
-            }
-            updatePreview();
-        });
-
-        // Initial setup
         $(document).ready(function() {
-            toggleDates(); // Initialize date visibility
+            let groupIndex = 1;
+            const users = /*[[${users}]]*/ [];
+            const zones = /*[[${zones}]]*/ [];
+
+            // Debugging: Log users and zones arrays
+            console.log('Users array:', users);
+            console.log('Zones array:', zones);
+            if (users.length === 0) {
+                console.warn('Users array is empty. Ensure the "users" model attribute is populated in the controller.');
+            }
+            if (zones.length === 0) {
+                console.warn('Zones array is empty. Ensure the "zones" model attribute is populated in the controller.');
+            }
+
+            // Initialize Select2 and user details for RACF IDs
+            function initRacfIdSelect($select, $group) {
+                $select.select2({
+                    placeholder: "Select RACF IDs",
+                    allowClear: true,
+                    width: '100%'
+                });
+
+                const $userDetails = $group.find('.user-details');
+                const $errorMessage = $group.find('.error-message').filter('[id^=userError]');
+
+                $select.on('change', function() {
+                    const selectedUserIds = $(this).val() || [];
+                    $userDetails.empty();
+
+                    selectedUserIds.forEach(userId => {
+                        const user = users.find(u => u.id == userId);
+                        if (user) {
+                            $userDetails.append(`
+                                <div class="user-detail" data-user-id="${user.id}">
+                                    ${user.firstName} ${user.lastName} (${user.title}, ${user.email}, ${user.phoneNumber || 'N/A'})
+                                    <button type="button" class="btn btn-sm btn-danger ms-2 remove-user">Remove</button>
+                                </div>
+                            `);
+                        }
+                    });
+
+                    $errorMessage.toggle(selectedUserIds.length === 0);
+                    updateAddedGroupsTable();
+                    console.log('Selected user IDs:', selectedUserIds);
+                }).trigger('change');
+            }
+
+            // Initialize Select2 and validation for zones
+            function initZoneSelect($select, $group) {
+                $select.select2({
+                    placeholder: "Select zones",
+                    allowClear: true,
+                    width: '100%'
+                });
+
+                const $errorMessage = $group.find('.error-message').filter('[id^=zoneError]');
+                $select.on('change', function() {
+                    const selectedZoneIds = $(this).val() || [];
+                    $errorMessage.toggle(selectedZoneIds.length === 0);
+                    updateAddedGroupsTable();
+                    console.log('Selected zone IDs:', selectedZoneIds);
+                });
+            }
+
+            // Initialize Select2 for zip codes
+            function initZipCodeSelect($select) {
+                $select.select2({
+                    placeholder: "Select zip codes (optional)",
+                    allowClear: true,
+                    width: '100%'
+                });
+            }
+
+            // Initialize first group
+            initRacfIdSelect($('#racfIdSelect0'), $('.assignment-group').first());
+            initZoneSelect($('#zoneIds0'), $('.assignment-group').first());
+            initZipCodeSelect($('#zipCodeIds0'));
+
+            // Remove user
+            $(document).on('click', '.remove-user', function() {
+                const $userDetail = $(this).closest('.user-detail');
+                const userId = $userDetail.data('user-id');
+                const $group = $(this).closest('.assignment-group');
+                const $select = $group.find('.racf-id-select');
+                const $errorMessage = $group.find('.error-message').filter('[id^=userError]');
+
+                // Deselect user in Select2
+                const newValues = $select.val().filter(id => id != userId);
+                $select.val(newValues).trigger('change');
+
+                $userDetail.remove();
+                console.log('Removed user ID:', userId);
+            });
+
+            // Add new assignment group
+            $('#addGroup').click(function() {
+                const newGroup = `
+                    <div class="assignment-group user-entry">
+                        <h5>Assignment Group</h5>
+                        <div class="mb-3">
+                            <label for="racfIdSelect${groupIndex}" class="form-label">RACF IDs</label>
+                            <select multiple class="form-select racf-id-select" id="racfIdSelect${groupIndex}" name="assignments[${groupIndex}].userIds" required>
+                                <option th:each="user : ${users}" th:value="${user.id}" th:text="${user.racfid}"></option>
+                            </select>
+                            <div class="user-details mt-2"></div>
+                            <div class="error-message" id="userError${groupIndex}">Please select at least one user.</div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="zoneIds${groupIndex}" class="form-label">Zones</label>
+                            <select multiple class="form-select zone-select" id="zoneIds${groupIndex}" name="assignments[${groupIndex}].zoneIds" required>
+                                <option th:each="zone : ${zones}" th:value="${zone.id}" th:text="${zone.name}"></option>
+                            </select>
+                            <div class="error-message" id="zoneError${groupIndex}">Please select at least one zone.</div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="zipCodeIds${groupIndex}" class="form-label">Zip Codes (Optional)</label>
+                            <select multiple class="form-select zipcode-select" id="zipCodeIds${groupIndex}" name="assignments[${groupIndex}].zipCodeIds">
+                            </select>
+                        </div>
+                        <div class="individual-dates row" style="display: none;">
+                            <div class="col-md-6 mb-3">
+                                <label for="startDate${groupIndex}" class="form-label">Start Date</label>
+                                <input type="date" class="form-control" name="assignments[${groupIndex}].startDate" id="startDate${groupIndex}">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="endDate${groupIndex}" class="form-label">End Date</label>
+                                <input type="date" class="form-control" name="assignments[${groupIndex}].endDate" id="endDate${groupIndex}">
+                            </div>
+                        </div>
+                        <button type="button" class="btn btn-sm btn-danger remove-group">Remove Group</button>
+                    </div>`;
+                $('#assignmentGroups').append(newGroup);
+                initRacfIdSelect($(`#racfIdSelect${groupIndex}`), $(`.assignment-group:last`));
+                initZoneSelect($(`#zoneIds${groupIndex}`), $(`.assignment-group:last`));
+                initZipCodeSelect($(`#zipCodeIds${groupIndex}`));
+                groupIndex++;
+            });
+
+            // Remove group
+            $(document).on('click', '.remove-group', function() {
+                $(this).closest('.assignment-group').remove();
+                updateAddedGroupsTable();
+            });
+
+            // Toggle shared/individual dates
+            $('#sameDates').change(function() {
+                if ($(this).is(':checked')) {
+                    $('#sharedDates').show();
+                    $('.individual-dates').hide();
+                } else {
+                    $('#sharedDates').hide();
+                    $('.individual-dates').show();
+                }
+                updateAddedGroupsTable();
+            }).trigger('change');
+
+            // Load zip codes dynamically
+            $(document).on('change', '.zone-select', function() {
+                const $group = $(this).closest('.assignment-group');
+                const $zipSelect = $group.find('.zipcode-select');
+                const zoneIds = $(this).val();
+                const $errorMessage = $group.find('.error-message').filter('[id^=zoneError]');
+                $errorMessage.toggle(!zoneIds || zoneIds.length === 0);
+                if (zoneIds && zoneIds.length > 0) {
+                    $.get(`/zone/${zoneIds.join(',')}/zipcodes`, function(data) {
+                        $zipSelect.empty().trigger('change'); // Clear and update Select2
+                        data.forEach(zip => {
+                            $zipSelect.append(`<option value="${zip.id}">${zip.code}</option>`);
+                        });
+                    }).fail(function(error) {
+                        console.error('Error loading zip codes:', error);
+                    });
+                } else {
+                    $zipSelect.empty().trigger('change'); // Clear and update Select2
+                }
+                updateAddedGroupsTable();
+            });
+
+            // Update Added Groups table
+            function updateAddedGroupsTable() {
+                const $tableBody = $('#addedGroupsTable');
+                $tableBody.empty();
+
+                $('#assignmentGroups .assignment-group').each(function(index) {
+                    const $group = $(this);
+                    const $racfSelect = $group.find('.racf-id-select');
+                    const $zoneSelect = $group.find('.zone-select');
+                    const $zipSelect = $group.find('.zipcode-select');
+                    const $startDate = $group.find('input[name^="assignments"][id$="startDate"]');
+                    const $endDate = $group.find('input[name^="assignments"][id$="endDate"]');
+
+                    const userIds = $racfSelect.val() || [];
+                    const zoneIds = $zoneSelect.val() || [];
+                    const zipIds = $zipSelect.val() || [];
+                    const startDate = $startDate.val();
+                    const endDate = $endDate.val();
+
+                    const racfIdsText = userIds.map(id => users.find(u => u.id == id)?.racfid || 'N/A').join(', ');
+                    const zoneNames = zoneIds.map(id => zones.find(z => z.id == id)?.name || 'N/A').join(', ');
+                    const zipCodes = zipIds.map(id => $zipSelect.find(`option[value="${id}"]`).text() || 'N/A').join(', ');
+
+                    const row = `
+                        <tr>
+                            <td>${index + 1}</td>
+                            <td>${racfIdsText}</td>
+                            <td>${zoneNames}</td>
+                            <td>${zipCodes}</td>
+                            <td>${startDate || 'N/A'}</td>
+                            <td>${endDate || 'N/A'}</td>
+                            <td><button type="button" class="btn btn-sm btn-danger remove-group-btn" data-group-index="${index}">Remove</button></td>
+                        </tr>`;
+                    $tableBody.append(row);
+                });
+            }
+
+            // Remove group via table button
+            $(document).on('click', '.remove-group-btn', function() {
+                const groupIndex = $(this).data('group-index');
+                $(`#assignmentGroups .assignment-group:nth-child(${groupIndex + 1})`).remove();
+                updateAddedGroupsTable();
+            });
+
+            // Initial table update
+            updateAddedGroupsTable();
+
+            // Client-side form validation
+            $('#bulkShiftForm').on('submit', function(e) {
+                let valid = true;
+                $('.assignment-group').each(function() {
+                    const $group = $(this);
+                    const $userSelect = $group.find('.racf-id-select');
+                    const $zoneSelect = $group.find('.zone-select');
+                    const $userError = $group.find('.error-message').filter('[id^=userError]');
+                    const $zoneError = $group.find('.error-message').filter('[id^=zoneError]');
+
+                    const userIds = $userSelect.val() || [];
+                    const zoneIds = $zoneSelect.val() || [];
+
+                    if (userIds.length === 0) {
+                        $userError.show();
+                        valid = false;
+                    } else {
+                        $userError.hide();
+                    }
+
+                    if (zoneIds.length === 0) {
+                        $zoneError.show();
+                        valid = false;
+                    } else {
+                        $zoneError.hide();
+                    }
+                });
+
+                if (!valid) {
+                    e.preventDefault();
+                    alert('Please correct the errors in the form.');
+                }
+            });
         });
     </script>
 </body>

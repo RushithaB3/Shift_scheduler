@@ -6,10 +6,10 @@ import java.util.List;
 public class AssignmentForm {
 
     private List<Long> userIds;
-    private List<Long> zoneIds; // Changed to List to support multiple zones
-    private List<Long> zipCodeIds; // null or empty for all zipcodes
-    private LocalDate startDate; // Per-group date if sameDates is false
-    private LocalDate endDate; // Per-group date if sameDates is false
+    private List<Long> zoneIds;
+    private List<Long> zipCodeIds;
+    private LocalDate startDate;
+    private LocalDate endDate;
 
     // Getters and Setters
     public List<Long> getUserIds() {

@@ -9,8 +9,6 @@ import com.shiftscheduler.backend.repository.ZipCodeRepository;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
 import java.util.Optional;
 
 @Controller

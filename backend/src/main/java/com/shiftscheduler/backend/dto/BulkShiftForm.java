@@ -5,9 +5,9 @@ import java.util.List;
 
 public class BulkShiftForm {
 
-    private LocalDate startDate; // Used if sameDates is true
-    private LocalDate endDate; // Used if sameDates is true
-    private boolean sameDates; // Indicates if dates are shared across groups
+    private LocalDate startDate;
+    private LocalDate endDate;
+    private boolean sameDates;
     private List<AssignmentForm> assignments;
 
     // Getters and Setters
