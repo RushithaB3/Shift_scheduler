@@ -14,7 +14,7 @@ public class ZipCode {
 
     // Each zip code is linked to one zone
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "zone_id", nullable = false)
+    @JoinColumn(name = "zone_id", nullable = true)
     private Zone zone;
 
     // Default constructor

@@ -5,6 +5,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Set;
 
 public interface LeaveRepository extends JpaRepository<Leave, Long> {
 
@@ -26,4 +27,8 @@ public interface LeaveRepository extends JpaRepository<Leave, Long> {
         // Filter by zone, zip code, and date range
         List<Leave> findByZone_IdAndZipCode_IdAndFromDateGreaterThanEqualAndToDateLessThanEqual(
                         Long zoneId, Long zipCodeId, LocalDate startDate, LocalDate endDate);
+
+        long countByZone_Id(Long zoneId);
+
+        long countByZipCode_IdIn(Set<Long> zipCodeIds);
 }

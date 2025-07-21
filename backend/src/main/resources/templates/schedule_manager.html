@@ -89,6 +89,66 @@
                 margin-bottom: 10px;
             }
         }
+        /* Styles for the section */
+        .feature-section {
+            background-color: #ffffff; /* White background as requested */
+            padding: 50px 0;
+        }
+        .feature-heading {
+            font-size: 2.5rem;
+            font-weight: bold;
+            margin-bottom: 40px;
+            text-align: center;
+            color: #0d6efd; /* Blue color for heading */
+        }
+        .custom-card {
+            background-color: white;
+            border-radius: 20px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            text-align: center;
+            padding: 40px 30px; /* Increased padding for larger size */
+        }
+        .custom-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+        }
+        .icon-circle {
+            background-color: #ffffff; /* White background instead of blue */
+            border-radius: 10px;
+            width: 160px; /* Increased size */
+            height: 160px; /* Increased size */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 20px;
+        }
+        .custom-card img {
+            width: 60px; /* Increased size */
+            height: 60px; /* Increased size */
+            object-fit: contain;
+            /* Removed filter to show original colors */
+        }
+        .custom-card h5 {
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 1.25rem; /* Slightly increased font size */
+        }
+        .custom-card p {
+            font-size: 1rem; /* Increased from 0.9rem */
+            color: #6c757d;
+            margin-bottom: 20px;
+        }
+        .custom-card hr {
+            border-color: #dee2e6;
+            opacity: 0.5;
+            margin: 20px 0;
+        }
+        .custom-card .btn {
+            border-radius: 50px;
+            padding: 12px 35px; /* Slightly increased button padding */
+        }
     </style>
 </head>
 <body>
@@ -111,7 +171,7 @@
         <!-- Navbar for Mobile -->
         <nav class="navbar navbar-expand-lg navbar-light bg-light d-md-none">
             <div class="container-fluid">
-                <button class="navbar-toggler" type="button" data-bs-toggle="offcanvas" data-bs-target="#sidebar" data-bs-controls="sidebar">
+                <button class="navbar-toggler" type="button" data-bs-toggle="offcanvas" data-bs-target="#sidebar" aria-controls="sidebar">
                     <span class="navbar-toggler-icon"></span>
                 </button>
                 <span class="navbar-brand">Zentech</span>
@@ -127,16 +187,57 @@
 
         <!-- Main Content -->
         <div class="main-content">
-            <div class="mt-2">
-                <h2 class="text-primary">Schedule Manager</h2>
-                <div class="mt-4 d-flex flex-wrap">
-                    <a th:href="@{/shifts}" href="/shifts" class="btn btn-primary me-2 mb-2">ADD SHIFT</a>
-                    <a th:href="@{/leaves}" href="/leaves" class="btn btn-primary me-2 mb-2">ADD LEAVE</a>
-                    <a th:href="@{/filter_shift}" href="/filter_shift" class="btn btn-primary me-2 mb-2">FILTER SHIFT</a>
-                    <a th:href="@{/zones}" href="/zones" class="btn btn-primary me-2 mb-2">ADD ZONE</a>
+            <div class="feature-section">
+                <div class="container">
+                    <h2 class="feature-heading">Schedule Manager</h2>
+                    <div class="row justify-content-center gy-4">
+                        <div class="col-12 col-md-3">
+                            <div class="custom-card">
+                                <div class="icon-circle">
+                                    <img src="/images/addShift.png" alt="Add Shift Icon">
+                                </div>
+                                <h5>Add Shift</h5>
+                                <p>Add, Edit, Delete shifts</p>
+                                <hr>
+                                <a th:href="@{/shifts}" href="/shifts" class="btn btn-primary">Add Shift</a>
+                            </div>
+                        </div>
+                        <div class="col-12 col-md-3">
+                            <div class="custom-card">
+                                <div class="icon-circle">
+                                    <img src="/images/leave.png" alt="Add Leave Icon">
+                                </div>
+                                <h5>Add Leave</h5>
+                                <p>Add leave requests.</p>
+                                <hr>
+                                <a th:href="@{/leaves}" href="/leaves" class="btn btn-primary">Add Leave</a>
+                            </div>
+                        </div>
+                        <div class="col-12 col-md-3">
+                            <div class="custom-card">
+                                <div class="icon-circle">
+                                    <img src="/images/filter.png" alt="Filter Shift Icon">
+                                </div>
+                                <h5>Filter Shift</h5>
+                                <p>Filter and view existing shifts.</p>
+                                <hr>
+                                <a th:href="@{/filter_shift}" href="/filter_shift" class="btn btn-primary">Filter Shift</a>
+                            </div>
+                        </div>
+                        <div class="col-12 col-md-3">
+                            <div class="custom-card">
+                                <div class="icon-circle">
+                                    <img src="/images/zone.png" alt="Add Zone Icon">
+                                </div>
+                                <h5>Add Zone</h5>
+                                <p>Add new zones.</p>
+                                <hr>
+                                <a th:href="@{/zones}" href="/zones" class="btn btn-primary">Add Zone</a>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
-
         </div>
     </div>
 
@@ -191,7 +292,7 @@
                 return;
             }
 
-            fetch(`/api/users?id=${racfid}`)
+            fetch(`/api/users?id=${encodeURIComponent(racfid)}`)
                 .then(res => {
                     if (!res.ok) {
                         throw new Error('User not found');

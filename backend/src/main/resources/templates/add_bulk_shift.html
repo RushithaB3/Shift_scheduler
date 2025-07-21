@@ -164,9 +164,10 @@
                 </div>
                 <div class="col-12 col-md-3">
                     <label class="form-label">Zone</label>
-                    <select th:field="*{zone.id}" id="zoneSelect" class="form-select" multiple required>
+                    <select th:field="*{zone.id}" id="zoneSelect" class="form-select" required>
                         <option value="">Select Zone</option>
-                        <option th:each="z : ${zones}" th:value="${z.id}" th:text="${z.name}" th:selected="${z.id == shiftForm.zone?.id}"></option>
+                        <option th:each="z : ${zones}" th:value="${z.id}" th:text="${z.name}"
+                                th:selected="${z.id == shiftForm.zone?.id}"></option>
                     </select>
                 </div>
                 <div class="col-12 col-md-3">
@@ -199,9 +200,7 @@
                         <tr>
                             <th>RACF ID</th>
                             <th>Name</th>
-                            <th>Title</th>
                             <th>Email</th>
-                            <th>Phone Number</th>
                             <th>Zone</th>
                             <th>Zip Code</th>
                             <th>Start</th>
@@ -212,10 +211,8 @@
                     <tbody>
                         <tr th:each="shift : ${shifts}">
                             <td th:text="${shift.racfid}">u001</td>
-                            <td th:text="${shift.user.title}">Title</td>
                             <td th:text="${shift.user.firstName + ' ' + shift.user.lastName}">Name</td>
                             <td th:text="${shift.user.email}">Email</td>
-                            <td th:text="${shift.user.phoneNumber}">Phone</td>
                             <td th:text="${shift.zone.name}">Zone</td>
                             <td th:text="${shift.zipCode.code}">Zip</td>
                             <td th:text="${shift.startDate}">2025-07-01</td>
@@ -227,7 +224,7 @@
                             </td>
                         </tr>
                         <tr th:if="${shifts.isEmpty()}">
-                            <td colspan="10" class="text-center text-muted">No shifts available.</td>
+                            <td colspan="8" class="text-center text-muted">No shifts available.</td>
                         </tr>
                     </tbody>
                 </table>
@@ -323,9 +320,7 @@
         }
 
         // Fetch user details when RACFID changes or blurred
-        $('#racfid').on('change blur', fetchUserDetails);
-
-        function fetchUserDetails() {
+        $('#racfid').on('change blur', function () {
             let racfid = $('#racfid').val().trim();
             if (racfid) {
                 $.get(`/api/users/racfid/${racfid}`, function (data) {
@@ -344,7 +339,7 @@
                 $('#lastName').val('');
                 $('#email').val('');
             }
-        }
+        });
 
         // Reusable function to load zip codes for a zone
         function loadZipCodes(zoneId) {
@@ -369,7 +364,7 @@
         }
 
         // Zone selection change event
-        $('#zoneSelect').on('change', function () {
+        $('#zoneSelect').change(function () {
             let zoneId = $(this).val();
             loadZipCodes(zoneId);
         });

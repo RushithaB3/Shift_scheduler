@@ -9,6 +9,7 @@ public interface ZipCodeRepository extends JpaRepository<ZipCode, Long> {
 
     // Find all zip codes that belong to a specific zone by zone ID
     List<ZipCode> findByZoneId(Long zoneId);
+    // List<zipcode> findByZone(Zone zone);
 
     // Optional: find zip codes by zone name
     List<ZipCode> findByZone_Name(String zoneName);

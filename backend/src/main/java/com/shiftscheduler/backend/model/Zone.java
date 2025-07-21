@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 
 import java.util.List;
+import java.util.ArrayList;
 
 @Entity
 @Table(name = "zone")
@@ -17,8 +18,8 @@ public class Zone {
     private String name;
 
     @JsonIgnore // ❗ Prevents circular reference during JSON serialization
-    @OneToMany(mappedBy = "zone", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<ZipCode> zipCodes;
+    @OneToMany(mappedBy = "zone", cascade = CascadeType.ALL, orphanRemoval = false)
+    private List<ZipCode> zipCodes = new ArrayList<>();
 
     // Constructors
     public Zone() {

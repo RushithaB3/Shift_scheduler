@@ -1,69 +1,77 @@
 package com.shiftscheduler.backend.controller;
 
 import com.shiftscheduler.backend.model.Zone;
-import com.shiftscheduler.backend.model.ZipCode;
-import com.shiftscheduler.backend.repository.ZoneRepository;
 import com.shiftscheduler.backend.repository.ZipCodeRepository;
+import com.shiftscheduler.backend.service.ZoneService;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
-import java.util.List;
+import java.util.HashSet;
 import java.util.Optional;
+import java.util.Set;
 
 @Controller
 @RequestMapping("/zones")
 public class ZoneController {
 
-    private final ZoneRepository zoneRepository;
+    private static final String ZONES_ATTRIBUTE = "zones";
+    private static final String REDIRECT_ZONES = "redirect:/zones";
+
+    private final ZoneService zoneService;
     private final ZipCodeRepository zipCodeRepository;
 
-    public ZoneController(ZoneRepository zoneRepository, ZipCodeRepository zipCodeRepository) {
-        this.zoneRepository = zoneRepository;
+    public ZoneController(ZoneService zoneService, ZipCodeRepository zipCodeRepository) {
+        this.zoneService = zoneService;
         this.zipCodeRepository = zipCodeRepository;
     }
 
-    // UI page showing all zones and zone form
     @GetMapping
-    public String showZones(Model model) {
-        model.addAttribute("zones", zoneRepository.findAll());
-        model.addAttribute("zoneForm", new Zone());
-        model.addAttribute("zipCodes", zipCodeRepository.findAll()); // ✅ Needed for zip code multi-select
+    public String getZones(Model model) {
+        model.addAttribute(ZONES_ATTRIBUTE, zoneService.getAllZones());
+        model.addAttribute("zoneForm", new Zone()); // For add mode
+        model.addAttribute("zipCodes", zipCodeRepository.findAll()); // List all zip codes for selection
         return "zones";
     }
 
-    // Save zone and assign selected zip codes to it
+    @SuppressWarnings("java:S3516")
     @PostMapping("/save")
     public String saveZone(@ModelAttribute("zoneForm") Zone zone,
-            @RequestParam(value = "zipCodeIds", required = false) List<Long> zipCodeIds) {
-        zoneRepository.save(zone);
-
-        // Assign selected zip codes to this zone
-        if (zipCodeIds != null && !zipCodeIds.isEmpty()) {
-            List<ZipCode> zipCodes = zipCodeRepository.findAllById(zipCodeIds);
-            for (ZipCode zip : zipCodes) {
-                zip.setZone(zone);
-            }
-            zipCodeRepository.saveAll(zipCodes);
+            @RequestParam(value = "zipCodeIds", required = false) Set<Long> zipCodeIds,
+            RedirectAttributes redirectAttributes) {
+        try {
+            zoneService.saveZone(zone, (zipCodeIds != null ? zipCodeIds : new HashSet<>()));
+            return REDIRECT_ZONES;
+        } catch (IllegalArgumentException | IllegalStateException e) {
+            redirectAttributes.addFlashAttribute("error", e.getMessage());
+            return REDIRECT_ZONES;
         }
-
-        return "redirect:/zones";
     }
 
-    // Load zone for editing
+    @SuppressWarnings("java:S3516")
     @GetMapping("/edit/{id}")
     public String editZone(@PathVariable Long id, Model model) {
-        Optional<Zone> zone = zoneRepository.findById(id);
-        model.addAttribute("zoneForm", zone.orElse(new Zone()));
-        model.addAttribute("zones", zoneRepository.findAll());
-        model.addAttribute("zipCodes", zipCodeRepository.findAll()); // ✅ Also needed here
-        return "zones";
+        Optional<Zone> zoneOpt = zoneService.getZoneById(id);
+        if (zoneOpt.isPresent()) {
+            model.addAttribute("zoneForm", zoneOpt.get()); // Pre-populate form for edit
+            model.addAttribute("zipCodes", zipCodeRepository.findAll()); // List all zip codes
+            model.addAttribute(ZONES_ATTRIBUTE, zoneService.getAllZones()); // Refresh table
+            return "zones"; // Reuse the same template for edit
+        } else {
+            return REDIRECT_ZONES + "?error=Zone not found";
+        }
     }
 
-    // Delete zone
+    @SuppressWarnings("java:S3516")
     @GetMapping("/delete/{id}")
-    public String deleteZone(@PathVariable Long id) {
-        zoneRepository.deleteById(id);
-        return "redirect:/zones";
+    public String deleteZone(@PathVariable Long id, RedirectAttributes redirectAttributes) {
+        try {
+            zoneService.deleteZone(id);
+            return REDIRECT_ZONES;
+        } catch (IllegalArgumentException | IllegalStateException e) {
+            redirectAttributes.addFlashAttribute("error", e.getMessage());
+            return REDIRECT_ZONES;
+        }
     }
 }

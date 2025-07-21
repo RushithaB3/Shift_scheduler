@@ -6,6 +6,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Set;
 
 public interface ShiftRepository extends JpaRepository<Shift, Long> {
 
@@ -22,4 +23,8 @@ public interface ShiftRepository extends JpaRepository<Shift, Long> {
             LocalDate startDate);
 
     List<Shift> findAllByOrderByLastModifiedDesc();
+
+    long countByZone_Id(Long zoneId);
+
+    long countByZipCode_IdIn(Set<Long> zipCodeIds);
 }
